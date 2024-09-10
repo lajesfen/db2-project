@@ -3,10 +3,12 @@
 #include <sstream>
 #include <cstring>
 #include <vector>
+#include <stdexcept>
 
+template <typename KT>
 struct Record
 {
-    int codigo;
+    KT codigo;
     char nombre[12];
     char apellido[12];
     int ciclo;
@@ -31,20 +33,21 @@ struct Record
     }
 };
 
+template <typename KT>
 class SequentialFile
 {
 private:
     std::string filename;
     std::string tempFilename = "temp_data.csv";
 
-    Record parseLine(const std::string &line)
+    Record<KT> parseLine(const std::string &line)
     {
         std::stringstream ss(line);
         std::string field;
-        Record record;
+        Record<KT> record;
 
         std::getline(ss, field, ',');
-        record.codigo = std::stoi(field);
+        record.codigo = static_cast<KT>(std::stoi(field));
         std::getline(ss, field, ',');
         std::strncpy(record.nombre, field.c_str(), sizeof(record.nombre));
         std::getline(ss, field, ',');
@@ -57,7 +60,7 @@ private:
         return record;
     }
 
-    std::string recordToLine(const Record &record)
+    std::string recordToLine(const Record<KT> &record)
     {
         std::stringstream ss;
         ss << record.codigo << ','
@@ -68,9 +71,9 @@ private:
         return ss.str();
     }
 
-    std::vector<Record> readAllRecords()
+    std::vector<Record<KT>> readAllRecords()
     {
-        std::vector<Record> records;
+        std::vector<Record<KT>> records;
         std::ifstream file(filename);
         if (file.is_open())
         {
@@ -87,7 +90,7 @@ private:
         return records;
     }
 
-    void writeAllRecords(const std::vector<Record> &records, const std::string &file)
+    void writeAllRecords(const std::vector<Record<KT>> &records, const std::string &file)
     {
         std::ofstream fileStream(file);
         if (fileStream.is_open())
@@ -102,8 +105,8 @@ private:
 
     void compact()
     {
-        std::vector<Record> records = readAllRecords();
-        std::vector<Record> activeRecords;
+        std::vector<Record<KT>> records = readAllRecords();
+        std::vector<Record<KT>> activeRecords;
 
         for (const auto &record : records)
         {
@@ -122,12 +125,12 @@ private:
 public:
     SequentialFile(const std::string &file) : filename(file) {}
 
-    Record search(int codigo)
+    Record<KT> search(KT key)
     {
-        std::vector<Record> records = readAllRecords();
+        std::vector<Record<KT>> records = readAllRecords();
         for (const auto &record : records)
         {
-            if (record.codigo == codigo && !record.eliminado)
+            if (record.codigo == key && !record.eliminado)
             {
                 return record;
             }
@@ -135,10 +138,10 @@ public:
         throw std::runtime_error("Record not found");
     }
 
-    std::vector<Record> rangeSearch(int begin_ciclo, int end_ciclo)
+    std::vector<Record<KT>> rangeSearch(int begin_ciclo, int end_ciclo)
     {
-        std::vector<Record> records = readAllRecords();
-        std::vector<Record> result;
+        std::vector<Record<KT>> records = readAllRecords();
+        std::vector<Record<KT>> result;
         for (const auto &record : records)
         {
             if (record.ciclo >= begin_ciclo && record.ciclo <= end_ciclo && !record.eliminado)
@@ -149,22 +152,22 @@ public:
         return result;
     }
 
-    bool add(const Record &record)
+    bool add(const Record<KT> &record)
     {
-        std::vector<Record> records = readAllRecords();
+        std::vector<Record<KT>> records = readAllRecords();
         records.push_back(record);
         writeAllRecords(records, filename);
         return true;
     }
 
-    bool remove(int codigo)
+    bool remove(KT key)
     {
-        std::vector<Record> records = readAllRecords();
+        std::vector<Record<KT>> records = readAllRecords();
         bool removed = false;
 
         for (auto &record : records)
         {
-            if (record.codigo == codigo)
+            if (record.codigo == key)
             {
                 record.eliminado = true;
                 removed = true;
