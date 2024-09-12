@@ -30,10 +30,6 @@ struct Record {
         "last_name: " + apellido + "; " +
         "ciclo: " + std::to_string(ciclo) + ";";
     }
-
-    bool operator==(const Record& other) const {
-        return codigo == other.codigo && strcmp(nombre, other.nombre) == 0 && strcmp(apellido, other.apellido) == 0 && ciclo == other.ciclo;
-    }
 };
 
 template <typename TK>

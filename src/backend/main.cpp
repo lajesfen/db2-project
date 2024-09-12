@@ -3,12 +3,29 @@
 
 int main() {
     crow::SimpleApp app;
-    AVLFile<int> file("avl_data.dat");
+    AVLFile<int> fileAVL("avl_data.dat");
 
-    CROW_ROUTE(app, "/avl/<int>")([&file](int pos) {
-        auto res = file.getRecord(pos).toString();
+    // GET
+    // - by Key (Find)
+    // - in Order
+    // SET (ADD)
+    // MODIFY
+    // - by Key
+    // DELETE
+    // - by Key
+
+    // GET Record by Primary Key (Find)
+    CROW_ROUTE(app, "/avl/get/<int>")([&fileAVL](int pos) {
+        auto res = fileAVL.find(pos).toString();
 
         return res;
+    });
+
+    // GET All Records
+    CROW_ROUTE(app, "/avl/getAll")([&fileAVL] {
+//        auto res = fileAVL.getAll().toString();
+
+        return 0;
     });
 
     app.port(18080).multithreaded().run();
