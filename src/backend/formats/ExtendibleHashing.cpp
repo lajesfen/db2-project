@@ -7,9 +7,10 @@
 #include <array>
 #include <sstream>
 #include <cstring>
+#include <algorithm>
 
-#define MAX_DEPTH 7 // Profundidad máxima
-#define MAX_FILL 10  // Factor de llenado
+#define MAX_DEPTH 3 // Profundidad máxima
+#define MAX_FILL 4 // Factor de llenado
 using namespace std;
 struct Record
 {
@@ -20,14 +21,14 @@ struct Record
 
     void showData() const
     {
-        std::cout << "\nCodigo: " << codigo;
+        cout << "\nCodigo: " << codigo;
     }
 };
 
 class Bucket
 {
 public:
-    std::vector<Record> records;
+    vector<Record> records;
     int depth;
 
     Bucket(int d) : depth(d) {}
@@ -39,6 +40,7 @@ public:
 
     void insert(const Record &record)
     {
+        
         records.push_back(record);
     }
 
@@ -51,7 +53,7 @@ public:
 class ExtendibleHashing
 {
 private:
-    std::vector<Bucket *> buckets;
+    vector<Bucket *> buckets;
 
 public:
     ExtendibleHashing()
@@ -59,7 +61,7 @@ public:
         buckets.push_back(new Bucket(1));
         buckets.push_back(new Bucket(1));
 
-        std::ofstream outFile("index.dat", std::ios::binary | std::ios::trunc);
+        ofstream outFile("index.dat", ios::binary | ios::trunc);
         if (outFile)
         {
             for (int i = 0; i < (1 << MAX_DEPTH); ++i)
@@ -68,11 +70,11 @@ public:
                 int a = i % 2;
                 outFile.write(reinterpret_cast<const char *>(&a), sizeof(a));
             }
-            std::cout << "Index saved to index.dat." << std::endl;
+            cout << "Index saved to index.dat." << endl;
         }
         else
         {
-            std::cout << "Failed to open index.dat for writing." << std::endl;
+            cout << "Failed to open index.dat for writing." << endl;
         }
     }
 
@@ -102,9 +104,7 @@ public:
             }
         }
 
-                    return Record{};
-
-
+        return Record{};
     }
 
     void insert(const Record &record)
@@ -116,7 +116,7 @@ public:
         {
             if (rec.codigo == record.codigo)
             {
-                std::cout << "Alredy exists " << std::endl;
+                cout << "Alredy exists " << endl;
                 return;
             }
         }
@@ -130,6 +130,27 @@ public:
         buckets[bucketIndex]->insert(record);
     }
 
+    void remove(int codigo)
+    {
+        int hashValue = hashFunction(codigo);
+        int bucketIndex = get_bucket_index(hashValue);
+
+        auto &records = buckets[bucketIndex]->records;
+
+        auto it = remove_if(records.begin(), records.end(), [&](const Record &rec)
+                                 { return rec.codigo == codigo; });
+
+        if (it != records.end())
+        {
+            records.erase(it, records.end());
+            cout << "Record with codigo " << codigo << " has been deleted." << endl;
+        }
+        else
+        {
+            cout << "Record with codigo " << codigo << " not found." << endl;
+        }
+    }
+
     void split(int bucketIndex)
     {
         Bucket *oldBucket = buckets[bucketIndex];
@@ -137,7 +158,7 @@ public:
 
         if (oldDepth >= MAX_DEPTH)
         {
-            std::cout << "Cannot split, maximum depth reached!" << std::endl;
+            cout << "Cannot split, maximum depth reached!" << endl;
             return;
         }
 
@@ -145,10 +166,10 @@ public:
         buckets.push_back(newBucket);
         int newIndex = buckets.size() - 1;
 
-        std::fstream indexFile("index.dat", std::ios::in | std::ios::out | std::ios::binary);
+        fstream indexFile("index.dat", ios::in | ios::out | ios::binary);
         if (!indexFile)
         {
-            std::cerr << "Failed to open index.dat" << std::endl;
+            cerr << "Failed to open index.dat" << endl;
             return;
         }
 
@@ -172,26 +193,26 @@ public:
             indexFile.read(reinterpret_cast<char *>(&currentBucketIndex), sizeof(currentBucketIndex));
         }
 
-        std::cout << " ======================================= " << std::endl;
+        cout << " ======================================= " << endl;
 
         indexFile.close();
-        std::fstream xddd("index.dat", std::ios::in | std::ios::out | std::ios::binary);
+        fstream xddd("index.dat", ios::in | ios::out | ios::binary);
 
         for (size_t i = 0; i < (1 << MAX_DEPTH); ++i)
         {
             int xdd, currentBucketIndex;
             xddd.read(reinterpret_cast<char *>(&xdd), sizeof(xdd));
             xddd.read(reinterpret_cast<char *>(&currentBucketIndex), sizeof(currentBucketIndex));
-            std::cout << xdd << " : " << currentBucketIndex << std::endl;
+            cout << xdd << " : " << currentBucketIndex << endl;
             xddd.seekg(i * (sizeof(int) + sizeof(int)));
             xddd.read(reinterpret_cast<char *>(&xdd), sizeof(xdd));
             xddd.read(reinterpret_cast<char *>(&currentBucketIndex), sizeof(currentBucketIndex));
-            std::cout << xdd << " -* " << currentBucketIndex << std::endl;
+            cout << xdd << " -* " << currentBucketIndex << endl;
         }
 
         xddd.close();
 
-        std::vector<Record> recordsToRedistribute = oldBucket->records;
+        vector<Record> recordsToRedistribute = oldBucket->records;
         oldBucket->clear();
         for (const Record &record : recordsToRedistribute)
         {
@@ -204,7 +225,7 @@ public:
 
     int get_bucket_index(int i)
     {
-        std::ifstream inFile("index.dat", std::ios::binary);
+        ifstream inFile("index.dat", ios::binary);
         if (inFile)
         {
             int bucketIndex;
@@ -219,55 +240,55 @@ public:
 
     void display_index_dat() const
     {
-        std::ifstream inFile("index.dat", std::ios::binary);
+        ifstream inFile("index.dat", ios::binary);
         if (inFile)
         {
-            std::cout << "\nContents of index.dat:\n";
-            std::cout << "binary  #bucket\n";
+            cout << "\nContents of index.dat:\n";
+            cout << "binary  #bucket\n";
             for (size_t i = 0; i < (1 << MAX_DEPTH); ++i)
             {
                 int indexValue, bucketIndex;
 
                 if (!inFile.read(reinterpret_cast<char *>(&indexValue), sizeof(indexValue)))
                 {
-                    std::cout << "Error reading index.dat." << std::endl;
+                    cout << "Error reading index.dat." << endl;
                     break;
                 }
 
                 if (!inFile.read(reinterpret_cast<char *>(&bucketIndex), sizeof(bucketIndex)))
                 {
-                    std::cout << "Error reading index.dat." << std::endl;
+                    cout << "Error reading index.dat." << endl;
                     break;
                 }
 
-                std::cout << std::bitset<MAX_DEPTH>(indexValue) << "    " << bucketIndex << "\n";
+                cout << bitset<MAX_DEPTH>(indexValue) << "    " << bucketIndex << "\n";
             }
             inFile.close();
         }
         else
         {
-            std::cout << "Failed to open index.dat." << std::endl;
+            cout << "Failed to open index.dat." << endl;
         }
     }
 
     void displayBuckets() const
     {
-        std::cout << "\ndatafile.dat:\n";
-        std::cout << "bucket  depth  records\n";
+        cout << "\ndatafile.dat:\n";
+        cout << "bucket  depth  records\n";
         for (size_t i = 0; i < buckets.size(); ++i)
         {
-            std::cout << " " << i << "      " << buckets[i]->depth << "    ";
+            cout << " " << i << "      " << buckets[i]->depth << "    ";
             for (const Record &rec : buckets[i]->records)
             {
-                std::cout << rec.codigo << " ";
+                cout << rec.codigo << " ";
             }
-            std::cout << "\n";
+            cout << "\n";
         }
     }
 
     void saveDatafile() const
     {
-        std::ofstream outFile("datafile.dat", std::ios::binary | std::ios::trunc);
+        ofstream outFile("datafile.dat", ios::binary | ios::trunc);
         if (outFile)
         {
             for (const Bucket *bucket : buckets)
@@ -276,24 +297,24 @@ public:
                 {
                     outFile.write(reinterpret_cast<const char *>(&record), sizeof(Record));
                 }
-                Record emptyRecord = {0, "", "", 0}; // Registro vacío
+                Record emptyRecord = {0, "", "", 0};  
                 for (size_t i = bucket->records.size(); i < MAX_FILL; ++i)
                 {
                     outFile.write(reinterpret_cast<const char *>(&emptyRecord), sizeof(Record));
                 }
                 outFile.write(reinterpret_cast<const char *>(&bucket->depth), sizeof(bucket->depth));
             }
-            std::cout << "Records saved to datafile.dat." << std::endl;
+            cout << "Records saved to datafile.dat." << endl;
         }
         else
         {
-            std::cout << "Failed to open datafile.dat for writing." << std::endl;
+            cout << "Failed to open datafile.dat for writing." << endl;
         }
     }
 
     void loadDatafile()
     {
-        std::ifstream inFile("datafile.dat", std::ios::binary);
+        ifstream inFile("datafile.dat", ios::binary);
         if (inFile)
         {
             while (!inFile.eof())
@@ -309,7 +330,6 @@ public:
                     }
                 }
 
-                // Leer la profundidad del bucket
                 int depth;
                 inFile.read(reinterpret_cast<char *>(&depth), sizeof(depth));
                 if (inFile.gcount() == sizeof(depth))
@@ -323,21 +343,21 @@ public:
                     break;
                 }
             }
-            std::cout << "Records loaded from datafile.dat." << std::endl;
+            cout << "Records loaded from datafile.dat." << endl;
         }
         else
         {
-            std::cout << "Failed to open datafile.dat for reading." << std::endl;
+            cout << "Failed to open datafile.dat for reading." << endl;
         }
     }
 
     void printDatafile() const
     {
-        std::ifstream inFile("datafile.dat", std::ios::binary);
+        ifstream inFile("datafile.dat", ios::binary);
         if (inFile)
         {
-            std::cout << "Contents of datafile.dat:\n";
-            std::cout << "bucket  records           depth\n";
+            cout << "Contents of datafile.dat:\n";
+            cout << "bucket  records           depth\n";
 
             int bucketIndex = 0;
             while (!inFile.eof())
@@ -357,12 +377,12 @@ public:
                 inFile.read(reinterpret_cast<char *>(&depth), sizeof(depth));
                 if (inFile.gcount() == sizeof(depth))
                 {
-                    std::cout << bucketIndex << "      ";
+                    cout << bucketIndex << "      ";
                     for (const Record &rec : bucket.records)
                     {
-                        std::cout << rec.codigo << " ";
+                        cout << rec.codigo << " ";
                     }
-                    std::cout << "         " << depth << "\n";
+                    cout << "         " << depth << "\n";
                     bucketIndex++;
                 }
                 else
@@ -374,13 +394,10 @@ public:
         }
         else
         {
-            std::cout << "Failed to open datafile.dat for reading." << std::endl;
+            cout << "Failed to open datafile.dat for reading." << endl;
         }
     }
 };
-
-
-
 
 vector<Record> leerCSV(const string &filename)
 {
@@ -394,7 +411,6 @@ vector<Record> leerCSV(const string &filename)
     }
     if (getline(file, line))
     {
- 
     }
 
     while (getline(file, line))
@@ -462,11 +478,16 @@ void readFile(string filename)
     }
     if (passed)
         cout << "Todos los records fueron leidos correctamente\n";
-    
+
     hashTable.displayBuckets();
+    hashTable.display_index_dat();
+    
+    hashTable.remove(64364845);
+     hashTable.displayBuckets();
     hashTable.display_index_dat();
     hashTable.saveDatafile();
     hashTable.printDatafile();
+
 
 }
 int main()
