@@ -6,7 +6,7 @@
 #include <stdexcept>
 
 template <typename KT>
-struct Record
+struct RecordSF
 {
     KT codigo;
     char nombre[12];
@@ -23,7 +23,7 @@ struct Record
         std::cout << "\nEliminado: " << (eliminado ? "Sí" : "No");
     }
 
-    bool operator==(const Record &other) const
+    bool operator==(const RecordSF &other) const
     {
         return codigo == other.codigo &&
                std::strcmp(nombre, other.nombre) == 0 &&
@@ -40,11 +40,11 @@ private:
     std::string filename;
     std::string tempFilename = "temp_data.csv";
 
-    Record<KT> parseLine(const std::string &line)
+    RecordSF<KT> parseLine(const std::string &line)
     {
         std::stringstream ss(line);
         std::string field;
-        Record<KT> record;
+        RecordSF<KT> record;
 
         std::getline(ss, field, ',');
         record.codigo = static_cast<KT>(std::stoi(field));
@@ -60,7 +60,7 @@ private:
         return record;
     }
 
-    std::string recordToLine(const Record<KT> &record)
+    std::string recordToLine(const RecordSF<KT> &record)
     {
         std::stringstream ss;
         ss << record.codigo << ','
@@ -71,9 +71,9 @@ private:
         return ss.str();
     }
 
-    std::vector<Record<KT>> readAllRecords()
+    std::vector<RecordSF<KT>> readAllRecords()
     {
-        std::vector<Record<KT>> records;
+        std::vector<RecordSF<KT>> records;
         std::ifstream file(filename);
         if (file.is_open())
         {
@@ -90,7 +90,7 @@ private:
         return records;
     }
 
-    void writeAllRecords(const std::vector<Record<KT>> &records, const std::string &file)
+    void writeAllRecords(const std::vector<RecordSF<KT>> &records, const std::string &file)
     {
         std::ofstream fileStream(file);
         if (fileStream.is_open())
@@ -105,8 +105,8 @@ private:
 
     void compact()
     {
-        std::vector<Record<KT>> records = readAllRecords();
-        std::vector<Record<KT>> activeRecords;
+        std::vector<RecordSF<KT>> records = readAllRecords();
+        std::vector<RecordSF<KT>> activeRecords;
 
         for (const auto &record : records)
         {
@@ -123,11 +123,16 @@ private:
     }
 
 public:
-    SequentialFile(const std::string &file) : filename(file) {}
+    SequentialFile(const std::string &file) : filename(file) {
+        std::ifstream archivo_existente(filename);
+        if(!archivo_existente.is_open())
+            std::ofstream archivo(filename);
+        archivo_existente.close();
+    }
 
-    Record<KT> search(KT key)
+    RecordSF<KT> search(KT key)
     {
-        std::vector<Record<KT>> records = readAllRecords();
+        std::vector<RecordSF<KT>> records = readAllRecords();
         for (const auto &record : records)
         {
             if (record.codigo == key && !record.eliminado)
@@ -138,10 +143,10 @@ public:
         throw std::runtime_error("Record not found");
     }
 
-    std::vector<Record<KT>> rangeSearch(KT begin_key, KT end_key)
+    std::vector<RecordSF<KT>> rangeSearch(KT begin_key, KT end_key)
     {
-        std::vector<Record<KT>> records = readAllRecords();
-        std::vector<Record<KT>> result;
+        std::vector<RecordSF<KT>> records = readAllRecords();
+        std::vector<RecordSF<KT>> result;
         for (const auto &record : records)
         {
             if (record.codigo >= begin_key && record.codigo <= end_key && !record.eliminado)
@@ -152,9 +157,9 @@ public:
         return result;
     }
 
-    bool add(const Record<KT> &record)
+    bool add(const RecordSF<KT> &record)
     {
-        std::vector<Record<KT>> records = readAllRecords();
+        std::vector<RecordSF<KT>> records = readAllRecords();
         records.push_back(record);
         writeAllRecords(records, filename);
         return true;
@@ -162,7 +167,7 @@ public:
 
     bool remove(KT key)
     {
-        std::vector<Record<KT>> records = readAllRecords();
+        std::vector<RecordSF<KT>> records = readAllRecords();
         bool removed = false;
 
         for (auto &record : records)
@@ -182,5 +187,13 @@ public:
         }
 
         return false;
+    }
+    friend int buscarSequentialPorNombre( std::vector<SequentialFile> sequentialFiles, const std::string& nombre) {
+        for (int i = 0; i < sequentialFiles.size(); ++i) {
+            if (sequentialFiles[i].filename==nombre) {
+                return i;
+            }
+        }
+        return -1;
     }
 };
