@@ -310,4 +310,15 @@ public:
         }
         return temp;
     }
+
+    //para ubicar los avls
+    friend int buscarAVLPorNombre(const std::vector<AVLFile>& avlVector, const std::string& nombreBuscado) {
+        int i;
+        for ( i=0 ; i < avlVector.size(); ++i) {
+            if (avlVector[i].filename == nombreBuscado) {
+                return i;
+            }
+        }
+        return -1;
+    }
 };
