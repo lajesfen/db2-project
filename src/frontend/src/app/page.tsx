@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Editor from 'react-simple-code-editor';
 import Prism from 'prismjs';
 import 'prismjs/components/prism-sql';
@@ -10,6 +10,12 @@ export default function Home() {
   const [code, setCode] = useState(
     `CREATE TABLE Customer FROM FILE "C:\\data.csv" USING Hash("DNI");\n`
   );
+
+  useEffect(() => {
+    fetch('http://0.0.0.0:18080/test/social')
+      .then((res) => res.json())
+      .then((data) => console.log(data));
+  }, []);
 
   return (
     <main className="flex flex-col max-w-7xl gap-3 p-20 mx-auto">
