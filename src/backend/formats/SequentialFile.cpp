@@ -1,240 +1,171 @@
 #include <iostream>
 #include <fstream>
+#include <sstream>
+#include <cstring>
 #include <vector>
-#include <algorithm>
 #include <stdexcept>
 
-#define MAX_AUX_RECORD 5 // Máxima cantidad de registros
-
-template <typename TK, typename Registro>
+template <typename KT, typename RecordType>
 class SequentialFile
 {
 private:
     std::string filename;
-    std::string aux_filename;
+    std::string tempFilename = "temp_data.csv";
+
+    RecordType parseLine(const std::string &line)
+    {
+        std::stringstream ss(line);
+        std::string field;
+        RecordType record;
+
+        std::getline(ss, field, ',');
+        record.codigo = static_cast<KT>(std::stoi(field));
+        std::getline(ss, field, ',');
+        std::strncpy(record.nombre, field.c_str(), sizeof(record.nombre));
+        std::getline(ss, field, ',');
+        std::strncpy(record.apellido, field.c_str(), sizeof(record.apellido));
+        std::getline(ss, field, ',');
+        record.ciclo = std::stoi(field);
+        std::getline(ss, field, ',');
+        record.eliminado = (field == "1");
+
+        return record;
+    }
+
+    std::string recordToLine(const RecordType &record)
+    {
+        std::stringstream ss;
+        ss << record.codigo << ','
+           << record.nombre << ','
+           << record.apellido << ','
+           << record.ciclo << ','
+           << (record.eliminado ? "1" : "0");
+        return ss.str();
+    }
+
+    std::vector<RecordType> readAllRecords()
+    {
+        std::vector<RecordType> records;
+        std::ifstream file(filename);
+        if (file.is_open())
+        {
+            std::string line;
+            while (std::getline(file, line))
+            {
+                if (!line.empty())
+                {
+                    records.push_back(parseLine(line));
+                }
+            }
+            file.close();
+        }
+        return records;
+    }
+
+    void writeAllRecords(const std::vector<RecordType> &records, const std::string &file)
+    {
+        std::ofstream fileStream(file);
+        if (fileStream.is_open())
+        {
+            for (const auto &record : records)
+            {
+                fileStream << recordToLine(record) << '\n';
+            }
+            fileStream.close();
+        }
+    }
+
+    void compact()
+    {
+        std::vector<RecordType> records = readAllRecords();
+        std::vector<RecordType> activeRecords;
+
+        for (const auto &record : records)
+        {
+            if (!record.eliminado)
+            {
+                activeRecords.push_back(record);
+            }
+        }
+
+        writeAllRecords(activeRecords, tempFilename);
+
+        std::remove(filename.c_str());
+        std::rename(tempFilename.c_str(), filename.c_str());
+    }
 
 public:
-    SequentialFile(std::string filename, std::string aux_filename = "")
-    {
-        this->filename = filename;
-
-        if (aux_filename.empty())
-        {
-            this->aux_filename = "aux_" + filename;
-        }
-        else
-        {
-            this->aux_filename = aux_filename;
-        }
+    SequentialFile(const std::string &file) : filename(file) {
+        std::ifstream archivo_existente(filename);
+        if(!archivo_existente.is_open())
+            std::ofstream archivo(filename);
+        archivo_existente.close();
     }
 
-    std::vector<Registro> search(TK key)
+    RecordType search(KT key)
     {
-        std::vector<Registro> results;
-        Registro reg;
-        std::ifstream file(filename, std::ios::binary);
-
-        if (!file.is_open())
+        std::vector<RecordType> records = readAllRecords();
+        for (const auto &record : records)
         {
-            throw std::runtime_error("No se pudo abrir el archivo principal");
-        }
-
-        while (file.read(reinterpret_cast<char *>(&reg), sizeof(Registro)))
-        {
-            if (reg.key == key)
+            if (record.codigo == key && !record.eliminado)
             {
-                results.push_back(reg);
+                return record;
             }
         }
-        file.close();
-
-        file.open(aux_filename, std::ios::binary);
-        if (!file.is_open())
-        {
-            throw std::runtime_error("No se pudo abrir el archivo auxiliar");
-        }
-        while (file.read(reinterpret_cast<char *>(&reg), sizeof(Registro)))
-        {
-            if (reg.key == key)
-            {
-                results.push_back(reg);
-            }
-        }
-        file.close();
-
-        return results;
+        throw std::runtime_error("Record not found");
     }
 
-    std::vector<Registro> rangeSearch(TK begin_key, TK end_key)
+    std::vector<RecordType> rangeSearch(KT begin_key, KT end_key)
     {
-        std::vector<Registro> results;
-        Registro reg;
-        std::ifstream file(filename, std::ios::binary);
-
-        if (!file.is_open())
+        std::vector<RecordType> records = readAllRecords();
+        std::vector<RecordType> result;
+        for (const auto &record : records)
         {
-            throw std::runtime_error("No se pudo abrir el archivo principal");
-        }
-
-        while (file.read(reinterpret_cast<char *>(&reg), sizeof(Registro)))
-        {
-            if (reg.key >= begin_key && reg.key <= end_key)
+            if (record.codigo >= begin_key && record.codigo <= end_key && !record.eliminado)
             {
-                results.push_back(reg);
+                result.push_back(record);
             }
         }
-        file.close();
-
-        file.open(aux_filename, std::ios::binary);
-        if (!file.is_open())
-        {
-            throw std::runtime_error("No se pudo abrir el archivo auxiliar");
-        }
-        while (file.read(reinterpret_cast<char *>(&reg), sizeof(Registro)))
-        {
-            if (reg.key >= begin_key && reg.key <= end_key)
-            {
-                results.push_back(reg);
-            }
-        }
-        file.close();
-
-        return results;
+        return result;
     }
 
-    bool add(Registro registro)
+    bool add(const RecordType &record)
     {
-        std::ofstream auxFile(aux_filename, std::ios::binary | std::ios::app);
-
-        if (!auxFile.is_open())
-        {
-            throw std::runtime_error("No se pudo abrir el archivo auxiliar");
-        }
-
-        auxFile.write(reinterpret_cast<const char *>(&registro), sizeof(Registro));
-        auxFile.close();
-
-        if (getAuxRecordCount() >= MAX_AUX_RECORD)
-        {
-            mergeFiles();
-        }
-
+        std::vector<RecordType> records = readAllRecords();
+        records.push_back(record);
+        writeAllRecords(records, filename);
         return true;
     }
 
-    bool remove(TK key)
+    bool remove(KT key)
     {
-        bool found = false;
-        std::vector<Registro> registros;
-        Registro reg;
+        std::vector<RecordType> records = readAllRecords();
+        bool removed = false;
 
-        std::ifstream file(filename, std::ios::binary);
-
-        if (!file.is_open())
+        for (auto &record : records)
         {
-            throw std::runtime_error("No se pudo abrir el archivo principal");
-        }
-
-        while (file.read(reinterpret_cast<char *>(&reg), sizeof(Registro)))
-        {
-            if (reg.key != key)
+            if (record.codigo == key)
             {
-                registros.push_back(reg);
-            }
-            else
-            {
-                found = true;
+                record.eliminado = true;
+                removed = true;
             }
         }
-        file.close();
 
-        if (!found)
+        if (removed)
         {
-            return false;
+            writeAllRecords(records, filename);
+            compact();
+            return true;
         }
 
-        std::ofstream outFile(filename, std::ios::binary | std::ios::trunc);
-
-        if (!outFile.is_open())
-        {
-            throw std::runtime_error(" No se pudo abrir el archivo principal");
-        }
-
-        for (const auto &r : registros)
-        {
-            outFile.write(reinterpret_cast<const char *>(&r), sizeof(Registro));
-        }
-        outFile.close();
-
-        return true;
+        return false;
     }
-
-    int getAuxRecordCount()
-    {
-        std::ifstream file(aux_filename, std::ios::binary);
-
-        if (!file.is_open())
-        {
-            throw std::runtime_error("No se pudo abrir el archivo auxiliar");
+    friend int buscarSequentialPorNombre( std::vector<SequentialFile> sequentialFiles, const std::string& nombre) {
+        for (int i = 0; i < sequentialFiles.size(); ++i) {
+            if (sequentialFiles[i].filename==nombre) {
+                return i;
+            }
         }
-
-        file.seekg(0, std::ios::end);
-        int count = file.tellg() / sizeof(Registro);
-        file.close();
-        return count;
-    }
-
-    void mergeFiles()
-    {
-        std::vector<Registro> allRecords;
-        Registro reg;
-
-        std::ifstream file(filename, std::ios::binary);
-
-        if (!file.is_open())
-        {
-            throw std::runtime_error("No se pudo abrir el archivo principal");
-        }
-
-        while (file.read(reinterpret_cast<char *>(&reg), sizeof(Registro)))
-        {
-            allRecords.push_back(reg);
-        }
-        file.close();
-
-        file.open(aux_filename, std::ios::binary);
-
-        if (!file.is_open())
-        {
-            throw std::runtime_error("No se pudo abrir el archivo auxiliar");
-        }
-
-        while (file.read(reinterpret_cast<char *>(&reg), sizeof(Registro)))
-        {
-            allRecords.push_back(reg);
-        }
-        file.close();
-
-        std::sort(allRecords.begin(), allRecords.end(), [](const Registro &a, const Registro &b)
-                  { return a.key < b.key; });
-
-        std::ofstream outFile(filename, std::ios::binary | std::ios::trunc);
-        if (!outFile.is_open())
-        {
-            throw std::runtime_error("No se pudo abrir el archivo principal");
-        }
-
-        for (const auto &r : allRecords)
-        {
-            outFile.write(reinterpret_cast<const char *>(&r), sizeof(Registro));
-        }
-        outFile.close();
-
-        std::ofstream auxFile(aux_filename, std::ios::binary | std::ios::trunc);
-        if (!auxFile.is_open())
-        {
-            throw std::runtime_error("No se pudo abrir el archivo auxiliar");
-        }
-        auxFile.close();
+        return -1;
     }
 };
