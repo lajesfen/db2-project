@@ -3,10 +3,12 @@
 #include "../data/SocialRecord.h"
 
 template <typename RecordType>
-std::vector<RecordType> readFromCSV();
+std::vector<RecordType> readFromCSV() {
+
+};
 
 template <>
-std::vector<HospitalRecord> readFromCSV() {
+inline std::vector<HospitalRecord> readFromCSV() {
     std::vector<HospitalRecord> res;
 
     // ToDo: Readline de cada argumento (Revisar los que se omiten) y agrega records a vector.
@@ -15,7 +17,7 @@ std::vector<HospitalRecord> readFromCSV() {
 }
 
 template <>
-std::vector<SocialRecord> readFromCSV() {
+inline std::vector<SocialRecord> readFromCSV() {
     std::vector<SocialRecord> res;
 
     // ToDo: Readline de cada argumento (Revisar los que se omiten) y agrega records a vector.
