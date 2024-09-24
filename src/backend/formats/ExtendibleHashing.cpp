@@ -12,23 +12,12 @@
 #define MAX_DEPTH 3 // Profundidad máxima
 #define MAX_FILL 4 // Factor de llenado
 using namespace std;
-struct Record
-{
-    int codigo;
-    char nombre[12];
-    char apellido[12];
-    int ciclo;
 
-    void showData() const
-    {
-        cout << "\nCodigo: " << codigo;
-    }
-};
-
+template <typename RecordType>
 class Bucket
 {
 public:
-    vector<Record> records;
+    vector<RecordType> records;
     int depth;
 
     Bucket(int d) : depth(d) {}
@@ -38,7 +27,7 @@ public:
         return records.size() >= MAX_FILL;
     }
 
-    void insert(const Record &record)
+    void insert(const RecordType &record)
     {
         
         records.push_back(record);
@@ -50,16 +39,17 @@ public:
     }
 };
 
+template <typename RecordType>
 class ExtendibleHashing
 {
 private:
-    vector<Bucket *> buckets;
+    vector<Bucket<RecordType> *> buckets;
 
 public:
     ExtendibleHashing()
     {
-        buckets.push_back(new Bucket(1));
-        buckets.push_back(new Bucket(1));
+        buckets.push_back(new Bucket<RecordType>(1));
+        buckets.push_back(new Bucket<RecordType>(1));
 
         ofstream outFile("index.dat", ios::binary | ios::trunc);
         if (outFile)
@@ -80,7 +70,7 @@ public:
 
     ~ExtendibleHashing()
     {
-        for (Bucket *bucket : buckets)
+        for (Bucket<RecordType> *bucket : buckets)
         {
             delete bucket;
         }
@@ -91,7 +81,7 @@ public:
         return key % (1 << MAX_DEPTH);
     }
 
-    Record find(int codi)
+    RecordType find(int codi)
     {
         int hashValue = hashFunction(codi);
         int bucketIndex = get_bucket_index(hashValue);
@@ -104,10 +94,10 @@ public:
             }
         }
 
-        return Record{};
+        return RecordType{};
     }
 
-    void insert(const Record &record)
+    void insert(const RecordType &record)
     {
         int hashValue = hashFunction(record.codigo);
         int bucketIndex = get_bucket_index(hashValue);
@@ -137,7 +127,7 @@ public:
 
         auto &records = buckets[bucketIndex]->records;
 
-        auto it = remove_if(records.begin(), records.end(), [&](const Record &rec)
+        auto it = remove_if(records.begin(), records.end(), [&](const RecordType &rec)
                                  { return rec.codigo == codigo; });
 
         if (it != records.end())
@@ -153,7 +143,7 @@ public:
 
     void split(int bucketIndex)
     {
-        Bucket *oldBucket = buckets[bucketIndex];
+        Bucket<RecordType> *oldBucket = buckets[bucketIndex];
         int oldDepth = oldBucket->depth;
 
         if (oldDepth >= MAX_DEPTH)
@@ -162,7 +152,7 @@ public:
             return;
         }
 
-        Bucket *newBucket = new Bucket(oldDepth + 1);
+        Bucket<RecordType> *newBucket = new Bucket<RecordType>(oldDepth + 1);
         buckets.push_back(newBucket);
         int newIndex = buckets.size() - 1;
 
@@ -212,9 +202,9 @@ public:
 
         xddd.close();
 
-        vector<Record> recordsToRedistribute = oldBucket->records;
+        vector<RecordType> recordsToRedistribute = oldBucket->records;
         oldBucket->clear();
-        for (const Record &record : recordsToRedistribute)
+        for (const RecordType &record : recordsToRedistribute)
         {
             insert(record);
         }
@@ -278,7 +268,7 @@ public:
         for (size_t i = 0; i < buckets.size(); ++i)
         {
             cout << " " << i << "      " << buckets[i]->depth << "    ";
-            for (const Record &rec : buckets[i]->records)
+            for (const RecordType &rec : buckets[i]->records)
             {
                 cout << rec.codigo << " ";
             }
@@ -291,16 +281,16 @@ public:
         ofstream outFile("datafile.dat", ios::binary | ios::trunc);
         if (outFile)
         {
-            for (const Bucket *bucket : buckets)
+            for (const Bucket<RecordType> *bucket : buckets)
             {
-                for (const Record &record : bucket->records)
+                for (const RecordType &record : bucket->records)
                 {
-                    outFile.write(reinterpret_cast<const char *>(&record), sizeof(Record));
+                    outFile.write(reinterpret_cast<const char *>(&record), sizeof(RecordType));
                 }
-                Record emptyRecord = {0, "", "", 0};  
+                RecordType emptyRecord = {0, "", "", 0};
                 for (size_t i = bucket->records.size(); i < MAX_FILL; ++i)
                 {
-                    outFile.write(reinterpret_cast<const char *>(&emptyRecord), sizeof(Record));
+                    outFile.write(reinterpret_cast<const char *>(&emptyRecord), sizeof(RecordType));
                 }
                 outFile.write(reinterpret_cast<const char *>(&bucket->depth), sizeof(bucket->depth));
             }
@@ -319,12 +309,12 @@ public:
         {
             while (!inFile.eof())
             {
-                Bucket *bucket = new Bucket(0);
+                Bucket<RecordType> *bucket = new Bucket<RecordType>(0);
                 for (size_t i = 0; i < MAX_FILL; ++i)
                 {
-                    Record record;
-                    inFile.read(reinterpret_cast<char *>(&record), sizeof(Record));
-                    if (inFile.gcount() == sizeof(Record))
+                    RecordType record;
+                    inFile.read(reinterpret_cast<char *>(&record), sizeof(RecordType));
+                    if (inFile.gcount() == sizeof(RecordType))
                     {
                         bucket->insert(record);
                     }
@@ -362,12 +352,12 @@ public:
             int bucketIndex = 0;
             while (!inFile.eof())
             {
-                Bucket bucket(0);
+                Bucket<RecordType> bucket(0);
                 for (size_t i = 0; i < MAX_FILL; ++i)
                 {
-                    Record record;
-                    inFile.read(reinterpret_cast<char *>(&record), sizeof(Record));
-                    if (inFile.gcount() == sizeof(Record))
+                    RecordType record;
+                    inFile.read(reinterpret_cast<char *>(&record), sizeof(RecordType));
+                    if (inFile.gcount() == sizeof(RecordType))
                     {
                         bucket.insert(record);
                     }
@@ -378,7 +368,7 @@ public:
                 if (inFile.gcount() == sizeof(depth))
                 {
                     cout << bucketIndex << "      ";
-                    for (const Record &rec : bucket.records)
+                    for (const RecordType &rec : bucket.records)
                     {
                         cout << rec.codigo << " ";
                     }
@@ -398,101 +388,3 @@ public:
         }
     }
 };
-
-vector<Record> leerCSV(const string &filename)
-{
-    ifstream file(filename);
-    vector<Record> records;
-    string line;
-    if (!file.is_open())
-    {
-        cerr << "No se pudo abrir el archivo.\n";
-        return records;
-    }
-    if (getline(file, line))
-    {
-    }
-
-    while (getline(file, line))
-    {
-        stringstream ss(line);
-        string token;
-        Record record;
-
-        try
-        {
-            getline(ss, token, ',');
-            record.codigo = stoi(token);
-
-            getline(ss, token, ',');
-            strncpy(record.nombre, token.c_str(), sizeof(record.nombre));
-            record.nombre[sizeof(record.nombre) - 1] = '\0';
-
-            getline(ss, token, ',');
-            strncpy(record.apellido, token.c_str(), sizeof(record.apellido));
-            record.apellido[sizeof(record.apellido) - 1] = '\0';
-
-            getline(ss, token, ',');
-            record.ciclo = stoi(token);
-
-            records.push_back(record);
-        }
-        catch (const invalid_argument &e)
-        {
-            cerr << "Error de conversión: " << e.what() << " en la línea: " << line << endl;
-        }
-        catch (const out_of_range &e)
-        {
-            cerr << "Valor fuera de rango: " << e.what() << " en la línea: " << line << endl;
-        }
-    }
-    file.close();
-    return records;
-}
-
-void readFile(string filename)
-{
-    ExtendibleHashing hashTable;
-
-    cout << "------------------------------------------\n";
-    vector<Record> records = leerCSV("datos.csv");
-    bool passed = true;
-    for (auto &record : records)
-    {
-        hashTable.insert(record);
-
-        Record r = hashTable.find(record.codigo);
-        r.showData();
-
-        if (!(r.codigo == record.codigo))
-        {
-            passed = false;
-            cout << "Error en el record con codigo: " << record.codigo << "\n";
-            cout << "Se esperaba: \n";
-            record.showData();
-            cout << "\nSe obtuvo: \n";
-            r.showData();
-            cout << "\n";
-            break;
-        }
-    }
-    if (passed)
-        cout << "Todos los records fueron leidos correctamente\n";
-
-    hashTable.displayBuckets();
-    hashTable.display_index_dat();
-    
-    hashTable.remove(64364845);
-     hashTable.displayBuckets();
-    hashTable.display_index_dat();
-    hashTable.saveDatafile();
-    hashTable.printDatafile();
-
-
-}
-int main()
-{
-    readFile("datafile.dat");
-    // Agruegue mas casos de prueba.
-    return 0;
-}

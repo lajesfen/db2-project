@@ -5,46 +5,18 @@
 #include <vector>
 #include <stdexcept>
 
-template <typename KT>
-struct RecordSF
-{
-    KT codigo;
-    char nombre[12];
-    char apellido[12];
-    int ciclo;
-    bool eliminado;
-
-    void showData() const
-    {
-        std::cout << "\nCodigo: " << codigo;
-        std::cout << "\nNombre: " << nombre;
-        std::cout << "\nApellido: " << apellido;
-        std::cout << "\nCiclo : " << ciclo;
-        std::cout << "\nEliminado: " << (eliminado ? "Sí" : "No");
-    }
-
-    bool operator==(const RecordSF &other) const
-    {
-        return codigo == other.codigo &&
-               std::strcmp(nombre, other.nombre) == 0 &&
-               std::strcmp(apellido, other.apellido) == 0 &&
-               ciclo == other.ciclo &&
-               eliminado == other.eliminado;
-    }
-};
-
-template <typename KT>
+template <typename KT, typename RecordType>
 class SequentialFile
 {
 private:
     std::string filename;
     std::string tempFilename = "temp_data.csv";
 
-    RecordSF<KT> parseLine(const std::string &line)
+    RecordType parseLine(const std::string &line)
     {
         std::stringstream ss(line);
         std::string field;
-        RecordSF<KT> record;
+        RecordType record;
 
         std::getline(ss, field, ',');
         record.codigo = static_cast<KT>(std::stoi(field));
@@ -60,7 +32,7 @@ private:
         return record;
     }
 
-    std::string recordToLine(const RecordSF<KT> &record)
+    std::string recordToLine(const RecordType &record)
     {
         std::stringstream ss;
         ss << record.codigo << ','
@@ -71,9 +43,9 @@ private:
         return ss.str();
     }
 
-    std::vector<RecordSF<KT>> readAllRecords()
+    std::vector<RecordType> readAllRecords()
     {
-        std::vector<RecordSF<KT>> records;
+        std::vector<RecordType> records;
         std::ifstream file(filename);
         if (file.is_open())
         {
@@ -90,7 +62,7 @@ private:
         return records;
     }
 
-    void writeAllRecords(const std::vector<RecordSF<KT>> &records, const std::string &file)
+    void writeAllRecords(const std::vector<RecordType> &records, const std::string &file)
     {
         std::ofstream fileStream(file);
         if (fileStream.is_open())
@@ -105,8 +77,8 @@ private:
 
     void compact()
     {
-        std::vector<RecordSF<KT>> records = readAllRecords();
-        std::vector<RecordSF<KT>> activeRecords;
+        std::vector<RecordType> records = readAllRecords();
+        std::vector<RecordType> activeRecords;
 
         for (const auto &record : records)
         {
@@ -130,9 +102,9 @@ public:
         archivo_existente.close();
     }
 
-    RecordSF<KT> search(KT key)
+    RecordType search(KT key)
     {
-        std::vector<RecordSF<KT>> records = readAllRecords();
+        std::vector<RecordType> records = readAllRecords();
         for (const auto &record : records)
         {
             if (record.codigo == key && !record.eliminado)
@@ -143,10 +115,10 @@ public:
         throw std::runtime_error("Record not found");
     }
 
-    std::vector<RecordSF<KT>> rangeSearch(KT begin_key, KT end_key)
+    std::vector<RecordType> rangeSearch(KT begin_key, KT end_key)
     {
-        std::vector<RecordSF<KT>> records = readAllRecords();
-        std::vector<RecordSF<KT>> result;
+        std::vector<RecordType> records = readAllRecords();
+        std::vector<RecordType> result;
         for (const auto &record : records)
         {
             if (record.codigo >= begin_key && record.codigo <= end_key && !record.eliminado)
@@ -157,9 +129,9 @@ public:
         return result;
     }
 
-    bool add(const RecordSF<KT> &record)
+    bool add(const RecordType &record)
     {
-        std::vector<RecordSF<KT>> records = readAllRecords();
+        std::vector<RecordType> records = readAllRecords();
         records.push_back(record);
         writeAllRecords(records, filename);
         return true;
@@ -167,7 +139,7 @@ public:
 
     bool remove(KT key)
     {
-        std::vector<RecordSF<KT>> records = readAllRecords();
+        std::vector<RecordType> records = readAllRecords();
         bool removed = false;
 
         for (auto &record : records)

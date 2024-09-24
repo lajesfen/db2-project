@@ -5,34 +5,9 @@
 #include <sstream>
 #include <cstring>
 
-struct Record {
-    int codigo;
-    char nombre[12];
-    char apellido[12];
-    int ciclo;
-    long left = -1;
-    long right = -1;
-    int height = 0;
+#include "../loaders/DataLoader.cpp"
 
-    void showData() {
-        std::cout << "\nCodigo: " << codigo;
-        std::cout << "\nNombre: " << nombre;
-        std::cout << "\nApellido: " << apellido;
-        std::cout << "\nCiclo : " << ciclo;
-        std::cout << "\nLeft : " << left;
-        std::cout << "\nRight : " << right;
-        std::cout << "\nHeight : " << height;
-    }
-
-    auto toString() {
-        return "code: " + std::to_string(codigo) + "; " +
-        "name: " + nombre + "; " +
-        "last_name: " + apellido + "; " +
-        "ciclo: " + std::to_string(ciclo) + ";";
-    }
-};
-
-template <typename TK>
+template <typename TK, typename RecordType>
 class AVLFile {
 private:
     std::string filename;
@@ -49,8 +24,6 @@ public:
             file.open(filename, std::ios::out | std::ios::binary);
             file.write((char*) &pos_root, offset);
             file.close();
-
-            loadDataFromCSV(); // Lee los datos del archivo .csv y los inserta al filename.dat
         } else {
             loadRootPos();
         }
@@ -61,44 +34,13 @@ public:
         saveRootPos();
     }
 
-    void loadDataFromCSV() {
-        std::cout << "Loading from file \n";
-        std::ifstream file("datos.csv");
-        std::string line;
-
-        getline(file, line);
-        while (getline(file, line)) {
-            std::stringstream ss(line);
-            std::string token;
-            Record record;
-
-            getline(ss, token, ',');
-            record.codigo = stoi(token);
-
-            getline(ss, token, ',');
-            strncpy(record.nombre, token.c_str(), sizeof(record.nombre));
-            record.nombre[sizeof(record.nombre) - 1] = '\0';  // Asegurar el null-termination
-
-            getline(ss, token, ',');
-            strncpy(record.apellido, token.c_str(), sizeof(record.apellido));
-            record.apellido[sizeof(record.apellido) - 1] = '\0';  // Asegurar el null-termination
-
-            getline(ss, token, ',');
-            record.ciclo = stoi(token);
-
-            insert(record);
-        }
-
-        file.close();
-    }
-
-    Record find(TK key) {
+    RecordType find(TK key) {
         return find(pos_root, key);
     }
 
-    Record find(long pos, TK key) {
+    RecordType find(long pos, TK key) {
         if(pos == -1) {
-            return Record{};
+            return RecordType{};
         }
 
         auto temp = getRecord(pos);
@@ -111,29 +53,29 @@ public:
         }
     }
 
-    Record getRecord(long pos) {
+    RecordType getRecord(long pos) {
         std::fstream file(filename, std::ios::binary | std::ios::in | std::ios::out);
-        Record record;
+        RecordType record;
 
-        file.seekg(offset + pos * sizeof(Record), std::ios::beg);
-        file.read((char*) &record, sizeof(Record));
+        file.seekg(offset + pos * sizeof(RecordType), std::ios::beg);
+        file.read((char*) &record, sizeof(RecordType));
         file.close();
         return record;
     }
 
-    void setRecord(long pos, Record record) {
+    void setRecord(long pos, RecordType record) {
         std::fstream file(filename, std::ios::binary | std::ios::in | std::ios::out);
 
-        file.seekp(offset + pos * sizeof(Record), std::ios::beg);
-        file.write((char*) &record, sizeof(Record));
+        file.seekp(offset + pos * sizeof(RecordType), std::ios::beg);
+        file.write((char*) &record, sizeof(RecordType));
         file.close();
     }
 
-    void insert(Record record) {
+    void insert(RecordType record) {
         insert(pos_root, record);
     }
 
-    void insert(long &pos, Record record) {
+    void insert(long &pos, RecordType record) {
         if (pos == -1) {
             pos = getSize();
             setRecord(pos, record);
@@ -174,7 +116,7 @@ public:
         file.write((char*) &pos_root, offset);
     }
 
-    void updateHeight(Record &record) {
+    void updateHeight(RecordType &record) {
         int leftHeight = getHeight(record.left);
         int rightHeight = getHeight(record.right);
         record.height = std::max(leftHeight, rightHeight);
@@ -182,20 +124,20 @@ public:
 
     int getHeight(long pos) {
         if(pos == -1) return -1;
-        Record record = getRecord(pos);
+        RecordType record = getRecord(pos);
         return record.height;
     }
 
     int getBalanceFactor(long pos) {
         if(pos == -1) return 0;
-        Record record = getRecord(pos);
+        RecordType record = getRecord(pos);
         return getHeight(record.left) - getHeight(record.right);
     }
 
     void balance(long &pos) {
         if(pos == -1) return;
 
-        Record record = getRecord(pos);
+        RecordType record = getRecord(pos);
         int hb = getBalanceFactor(pos);
         if (hb > 1) {
             if (getBalanceFactor(record.left) < 0)
@@ -211,8 +153,8 @@ public:
     }
 
     void rotateRight(long &pos) {
-        Record record = getRecord(pos);
-        Record leftChild = getRecord(record.left);
+        RecordType record = getRecord(pos);
+        RecordType leftChild = getRecord(record.left);
 
         record.left = leftChild.right;
         leftChild.right = pos;
@@ -224,8 +166,8 @@ public:
     }
 
     void rotateLeft(long &pos) {
-        Record record = getRecord(pos);
-        Record rightChild = getRecord(record.right);
+        RecordType record = getRecord(pos);
+        RecordType rightChild = getRecord(record.right);
 
         record.right = rightChild.left;
         rightChild.left = pos;
@@ -240,20 +182,20 @@ public:
         std::ifstream file(filename, std::ios::binary);
         file.seekg(0, std::ios::end);
 
-        return ((int)file.tellg() - offset) / sizeof(Record);
+        return ((int)file.tellg() - offset) / sizeof(RecordType);
     }
 
-    std::vector<Record> inorder() {
-        std::vector<Record> res;
+    std::vector<RecordType> inorder() {
+        std::vector<RecordType> res;
         inorder(pos_root, res);
 
         return res;
     }
 
-    void inorder(long pos, std::vector<Record> &res) {
+    void inorder(long pos, std::vector<RecordType> &res) {
         if(pos == -1) return;
 
-        Record temp = getRecord(pos);
+        RecordType temp = getRecord(pos);
         if(temp.left != -1) {
             inorder(temp.left, res);
         }
@@ -271,7 +213,7 @@ public:
         std::fstream file(filename, std::ios::binary | std::ios::in | std::ios::out);
 
         if (pos == -1) return false;
-        Record record = find(key);
+        RecordType record = find(key);
 
         if(record.left == -1 | record.right == -1) {
             long tempPos = (record.left != -1) ? record.left : record.right;
@@ -279,13 +221,13 @@ public:
             if (tempPos == -1) {
                 pos = -1;
             } else {
-                Record temp = getRecord(pos);
+                RecordType temp = getRecord(pos);
                 record = temp;
                 pos = tempPos;
             }
         } else {
             long nextPos = getMinValueRecord(record.right);
-            Record nextNode = getRecord(nextPos);
+            RecordType nextNode = getRecord(nextPos);
 
             record.codigo = nextNode.codigo;
             remove(record.right, nextNode.codigo);
@@ -301,7 +243,7 @@ public:
     }
 
     auto getMinValueRecord(long pos) {
-        Record record = getRecord(pos);
+        RecordType record = getRecord(pos);
         long temp = pos;
 
         while(record.left != -1) {
