@@ -12,7 +12,6 @@ struct HospitalRecord {
     std::string clasificacion;
     std::string tipo;
     std::string departamento;
-    std::string ucayali;
     std::string provincia;
     std::string distrito;
     int ubigeo;
@@ -20,7 +19,7 @@ struct HospitalRecord {
     std::string telefono;
     std::string estado;
     int camas;
-    std::string ruc;
+    long ruc;
 
     // Atributos AVL:
     long left = -1;
@@ -38,7 +37,6 @@ struct HospitalRecord {
         res["clasificacion"] = clasificacion;
         res["tipo"] = tipo;
         res["departamento"] = departamento;
-        res["ucayali"] = ucayali;
         res["provincia"] = provincia;
         res["distrito"] = distrito;
         res["ubigeo"] = ubigeo;
@@ -47,6 +45,8 @@ struct HospitalRecord {
         res["estado"] = estado;
         res["camas"] = camas;
         res["ruc"] = ruc;
+
+        return res;
     }
 };
 
