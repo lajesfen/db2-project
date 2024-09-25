@@ -7,14 +7,15 @@ import 'prismjs/themes/prism-tomorrow.css';
 import Table from './components/Table';
 
 export default function Home() {
+  const [data, setData] = useState([]);
   const [code, setCode] = useState(
     `CREATE TABLE Customer FROM FILE "C:\\data.csv" USING Hash("DNI");\n`
   );
 
   useEffect(() => {
-    fetch('http://0.0.0.0:18080/test/social')
+    fetch('http://0.0.0.0:18080/query')
       .then((res) => res.json())
-      .then((data) => console.log(data));
+      .then((data) => setData(data));
   }, []);
 
   return (
@@ -48,7 +49,7 @@ export default function Home() {
       </section>
 
       <section className="flex flex-row justify-between w-full rounded-md p-3 outline outline-1 outline-[#D4D4D4]">
-        <Table />
+        <Table data={data} />
       </section>
     </main>
   );

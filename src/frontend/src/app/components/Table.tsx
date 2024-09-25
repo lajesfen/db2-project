@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 import {
     PaginationState,
     useReactTable,
@@ -8,92 +8,41 @@ import {
     flexRender,
 } from '@tanstack/react-table'
 
-type Person = {
-    firstName: string
-    lastName: string
-    age: number
-    visits: number
-    status: string
-    progress: number
+interface TableProps {
+    data: any[];
 }
 
-function getRandomPerson(id: number): Person {
-    const firstNames = ['John', 'Jane', 'Mike', 'Emily', 'Robert', 'Alice', 'Chris', 'Tina', 'James', 'Jessica'];
-    const lastNames = ['Smith', 'Johnson', 'Williams', 'Jones', 'Brown', 'Davis', 'Miller', 'Wilson', 'Taylor', 'Anderson'];
-    const statuses = ['Single', 'In Relationship', 'Complicated', 'Married', 'Divorced'];
-
-    return {
-        firstName: firstNames[Math.floor(Math.random() * firstNames.length)],
-        lastName: lastNames[Math.floor(Math.random() * lastNames.length)],
-        age: Math.floor(Math.random() * 60) + 18, // Age between 18 and 77
-        visits: Math.floor(Math.random() * 500),  // Random visit count
-        status: statuses[Math.floor(Math.random() * statuses.length)],
-        progress: Math.floor(Math.random() * 100), // Progress between 0 and 100
-    };
-}
-
-function generateLargeDataset(size: number): Person[] {
-    const data: Person[] = [];
-    for (let i = 0; i < size; i++) {
-        data.push(getRandomPerson(i));
-    }
-    return data;
-}
-
-export default function Table() {
-    const [data, setData] = useState<Person[]>([]);
-
-    useEffect(() => {
-        setData(generateLargeDataset(1000));
-    }, [])
-
-    const [pagination, setPagination] = React.useState<PaginationState>({
+export default function Table({ data }: TableProps) {
+    const [pagination, setPagination] = useState<PaginationState>({
         pageIndex: 0,
         pageSize: 10,
-    })
+    });
 
-    const columns = React.useMemo<ColumnDef<Person>[]>(
-        () => [
+    const generateColumns = (): ColumnDef<any>[] => {
+        if (data.length === 0) return [];
+
+        const keys = Object.keys(data[0]);
+        const dynamicColumns = keys.map((key) => ({
+            accessorKey: key,
+            header: () => key.charAt(0).toUpperCase() + key.slice(1),
+            cell: (info: any) => info.getValue(),
+            footer: (props: any) => props.column.id,
+        }));
+
+        return [
             {
                 accessorKey: 'n',
                 header: () => '#',
-                cell: info => info.row.index,
+                cell: info => info.row.index + 1,
                 footer: props => props.column.id,
             },
-            {
-                accessorKey: 'firstName',
-                header: () => `First Name`,
-                footer: props => props.column.id,
-            },
-            {
-                accessorKey: 'lastName',
-                header: () => `Last Name`,
-                footer: props => props.column.id,
-            },
-            {
-                accessorKey: 'age',
-                header: () => `Age`,
-                footer: props => props.column.id,
-            },
-            {
-                accessorKey: 'visits',
-                header: () => `Visits`,
-                footer: props => props.column.id,
-            },
-            {
-                accessorKey: 'status',
-                header: () => `Status`,
-                footer: props => props.column.id,
-            },
-            {
-                accessorKey: 'progress',
-                header: () => `Progress`,
-                footer: props => props.column.id,
-            },
+            ...dynamicColumns,
+        ];
+    };
 
-        ],
-        []
-    )
+    const columns = React.useMemo<ColumnDef<any>[]>(() => {
+        return generateColumns();
+    }, [data]);
 
     const table = useReactTable({
         data,
@@ -102,7 +51,6 @@ export default function Table() {
             pagination,
         },
         onPaginationChange: setPagination,
-        // Pipeline
         getCoreRowModel: getCoreRowModel(),
         getPaginationRowModel: getPaginationRowModel(),
         debugTable: true,
@@ -112,7 +60,7 @@ export default function Table() {
         <div className="p-2 w-full overflow-x-scroll overflow-y-hidden">
             {data.length === 0 ? (
                 <div className='flex justify-center'>
-                    <p>Loading Data...</p>
+                    <p>Loading data...</p>
                 </div>
             ) : (
                 <table className="w-full text-center table-fixed">
@@ -142,7 +90,7 @@ export default function Table() {
                                 <tr key={row.id}>
                                     {row.getVisibleCells().map(cell => {
                                         return (
-                                            <td key={cell.id} className='border py-1'>
+                                            <td key={cell.id} className='border p-2 overflow-scroll'>
                                                 {flexRender(
                                                     cell.column.columnDef.cell,
                                                     cell.getContext()
