@@ -7,17 +7,17 @@ using json = nlohmann::json;
 
 struct HospitalRecord {
     int id;
-    std::string institucion;
-    std::string nombre;
-    std::string clasificacion;
-    std::string tipo;
-    std::string departamento;
-    std::string provincia;
-    std::string distrito;
+    char institucion[50];
+    char nombre[100];
+    char clasificacion[100];
+    char tipo[50];
+    char departamento[30];
+    char provincia[30];
+    char distrito[30];
     int ubigeo;
-    std::string direccion;
-    std::string telefono;
-    std::string estado;
+    char direccion[180];
+    char telefono[40];
+    char estado[8];
     int camas;
     long ruc;
 

@@ -7,15 +7,15 @@ using json = nlohmann::json;
 
 struct SocialRecord {
     int id;
-    std::string nombre;
-    std::string abreviatura;
-    std::string url;
-    std::string facebook;
-    std::string twitter;
-    std::string instagram;
-    std::string linkedin;
-    std::string youtube;
-    std::string tiktok;
+    char nombre[130];
+    char abreviatura[40];
+    char url[50];
+    char facebook[60];
+    char twitter[60];
+    char instagram[60];
+    char linkedin[80];
+    char youtube[90];
+    char tiktok[60];
 
     // Atributos AVL:
     long left = -1;

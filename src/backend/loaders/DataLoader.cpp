@@ -17,60 +17,62 @@ std::vector<HospitalRecord> readHospitalFromCSV() {
         HospitalRecord record;
 
         getline(ss, token, '\t');
-        record.institucion = token;
+        strncpy(record.institucion, token.c_str(), sizeof(record.institucion) - 1);
+        record.institucion[sizeof(record.institucion) - 1] = '\0';  // Null-terminate
 
         getline(ss, token, '\t');
         record.id = stoi(token);
 
         getline(ss, token, '\t');
-        record.nombre = token;
+        strncpy(record.nombre, token.c_str(), sizeof(record.nombre) - 1);
+        record.nombre[sizeof(record.nombre) - 1] = '\0';  // Null-terminate
 
         getline(ss, token, '\t');
-        record.clasificacion = token;
+        strncpy(record.clasificacion, token.c_str(), sizeof(record.clasificacion) - 1);
+        record.clasificacion[sizeof(record.clasificacion) - 1] = '\0';  // Null-terminate
 
         getline(ss, token, '\t');
-        record.tipo = token;
+        strncpy(record.tipo, token.c_str(), sizeof(record.tipo) - 1);
+        record.tipo[sizeof(record.tipo) - 1] = '\0';  // Null-terminate
 
         getline(ss, token, '\t');
-        record.departamento = token;
+        strncpy(record.departamento, token.c_str(), sizeof(record.departamento) - 1);
+        record.departamento[sizeof(record.departamento) - 1] = '\0';  // Null-terminate
 
         getline(ss, token, '\t');
-        record.provincia = token;
+        strncpy(record.provincia, token.c_str(), sizeof(record.provincia) - 1);
+        record.provincia[sizeof(record.provincia) - 1] = '\0';  // Null-terminate
 
         getline(ss, token, '\t');
-        record.distrito = token;
+        strncpy(record.distrito, token.c_str(), sizeof(record.distrito) - 1);
+        record.distrito[sizeof(record.distrito) - 1] = '\0';  // Null-terminate
 
         getline(ss, token, '\t');
         record.ubigeo = stoi(token);
 
         getline(ss, token, '\t');
-        record.direccion = token;
+        strncpy(record.direccion, token.c_str(), sizeof(record.direccion) - 1);
+        record.direccion[sizeof(record.direccion) - 1] = '\0';  // Null-terminate
+
+        for (int i = 0; i < 9; ++i) {
+            getline(ss, token, '\t');
+        }
 
         getline(ss, token, '\t');
-        getline(ss, token, '\t');
-        getline(ss, token, '\t');
-        getline(ss, token, '\t');
-        getline(ss, token, '\t');
-        getline(ss, token, '\t');
-        getline(ss, token, '\t');
-        getline(ss, token, '\t');
-        getline(ss, token, '\t');
+        strncpy(record.telefono, token.c_str(), sizeof(record.telefono) - 1);
+        record.telefono[sizeof(record.telefono) - 1] = '\0';  // Null-terminate
+
+        for (int i = 0; i < 5; ++i) {
+            getline(ss, token, '\t');
+        }
 
         getline(ss, token, '\t');
-        record.telefono = token;
+        strncpy(record.estado, token.c_str(), sizeof(record.estado) - 1);
+        record.estado[sizeof(record.estado) - 1] = '\0';  // Null-terminate
 
-        getline(ss, token, '\t');
-        getline(ss, token, '\t');
-        getline(ss, token, '\t');
-        getline(ss, token, '\t');
-        getline(ss, token, '\t');
-
-        getline(ss, token, '\t');
-        record.estado = token;
-
-        getline(ss, token, '\t');
-        getline(ss, token, '\t');
-        getline(ss, token, '\t');
+        for (int i = 0; i < 3; ++i) {
+            getline(ss, token, '\t');
+        }
 
         getline(ss, token, '\t');
         if (token.empty()) {
@@ -81,7 +83,6 @@ std::vector<HospitalRecord> readHospitalFromCSV() {
 
         getline(ss, token, '\t');
         record.ruc = stol(token);
-
 
         res.push_back(record);
     }
@@ -96,7 +97,7 @@ std::vector<SocialRecord> readSocialFromCSV() {
     std::string line;
 
     getline(file, line);
-    while(getline(file, line)) {
+    while (getline(file, line)) {
         std::stringstream ss(line);
         std::string token;
         SocialRecord record;
@@ -105,33 +106,42 @@ std::vector<SocialRecord> readSocialFromCSV() {
         record.id = stoi(token);
 
         getline(ss, token, '\t');
-        record.nombre = token;
+        strncpy(record.nombre, token.c_str(), sizeof(record.nombre) - 1);
+        record.nombre[sizeof(record.nombre) - 1] = '\0';  
 
         getline(ss, token, '\t');
-        record.abreviatura = token;
+        strncpy(record.abreviatura, token.c_str(), sizeof(record.abreviatura) - 1);
+        record.abreviatura[sizeof(record.abreviatura) - 1] = '\0';  
 
         getline(ss, token, '\t');
 
         getline(ss, token, '\t');
-        record.url = token;
+        strncpy(record.url, token.c_str(), sizeof(record.url) - 1);
+        record.url[sizeof(record.url) - 1] = '\0';  
 
         getline(ss, token, '\t');
-        record.facebook = token;
+        strncpy(record.facebook, token.c_str(), sizeof(record.facebook) - 1);
+        record.facebook[sizeof(record.facebook) - 1] = '\0';  
 
         getline(ss, token, '\t');
-        record.twitter = token;
+        strncpy(record.twitter, token.c_str(), sizeof(record.twitter) - 1);
+        record.twitter[sizeof(record.twitter) - 1] = '\0';  
 
         getline(ss, token, '\t');
-        record.instagram = token;
+        strncpy(record.instagram, token.c_str(), sizeof(record.instagram) - 1);
+        record.instagram[sizeof(record.instagram) - 1] = '\0';  
 
         getline(ss, token, '\t');
-        record.linkedin = token;
+        strncpy(record.linkedin, token.c_str(), sizeof(record.linkedin) - 1);
+        record.linkedin[sizeof(record.linkedin) - 1] = '\0';  
 
         getline(ss, token, '\t');
-        record.youtube = token;
+        strncpy(record.youtube, token.c_str(), sizeof(record.youtube) - 1);
+        record.youtube[sizeof(record.youtube) - 1] = '\0';  
 
         getline(ss, token, '\t');
-        record.tiktok = token;
+        strncpy(record.tiktok, token.c_str(), sizeof(record.tiktok) - 1);
+        record.tiktok[sizeof(record.tiktok) - 1] = '\0';  
 
         res.push_back(record);
     }
