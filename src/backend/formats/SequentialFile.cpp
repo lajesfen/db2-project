@@ -4,7 +4,7 @@
 #include <algorithm>
 #include <stdexcept>
 
-#define MAX_AUX_RECORD 5 // Máxima cantidad de registros
+#define MAX_AUX_RECORD 50 // Máxima cantidad de registros
 
 template <typename TK, typename Registro>
 class SequentialFile
@@ -28,41 +28,33 @@ public:
         }
     }
 
-    std::vector<Registro> search(TK key)
+    Registro search(TK key)
     {
-        std::vector<Registro> results;
         Registro reg;
         std::ifstream file(filename, std::ios::binary);
-
-        if (!file.is_open())
-        {
-            throw std::runtime_error("No se pudo abrir el archivo principal");
-        }
 
         while (file.read(reinterpret_cast<char *>(&reg), sizeof(Registro)))
         {
             if (reg.key == key)
             {
-                results.push_back(reg);
+                file.close();
+                return reg;
             }
         }
         file.close();
 
         file.open(aux_filename, std::ios::binary);
-        if (!file.is_open())
-        {
-            throw std::runtime_error("No se pudo abrir el archivo auxiliar");
-        }
         while (file.read(reinterpret_cast<char *>(&reg), sizeof(Registro)))
         {
             if (reg.key == key)
             {
-                results.push_back(reg);
+                file.close();
+                return reg;
             }
         }
         file.close();
 
-        return results;
+        throw std::runtime_error("Not found");
     }
 
     std::vector<Registro> rangeSearch(TK begin_key, TK end_key)
@@ -71,11 +63,6 @@ public:
         Registro reg;
         std::ifstream file(filename, std::ios::binary);
 
-        if (!file.is_open())
-        {
-            throw std::runtime_error("No se pudo abrir el archivo principal");
-        }
-
         while (file.read(reinterpret_cast<char *>(&reg), sizeof(Registro)))
         {
             if (reg.key >= begin_key && reg.key <= end_key)
@@ -86,10 +73,6 @@ public:
         file.close();
 
         file.open(aux_filename, std::ios::binary);
-        if (!file.is_open())
-        {
-            throw std::runtime_error("No se pudo abrir el archivo auxiliar");
-        }
         while (file.read(reinterpret_cast<char *>(&reg), sizeof(Registro)))
         {
             if (reg.key >= begin_key && reg.key <= end_key)
@@ -102,15 +85,18 @@ public:
         return results;
     }
 
-    bool add(Registro registro)
+    void add(Registro registro)
     {
-        std::ofstream auxFile(aux_filename, std::ios::binary | std::ios::app);
-
-        if (!auxFile.is_open())
+        try
         {
-            throw std::runtime_error("No se pudo abrir el archivo auxiliar");
+            search(registro.key);
+            return;
+        }
+        catch (const std::runtime_error &)
+        {
         }
 
+        std::ofstream auxFile(aux_filename, std::ios::binary | std::ios::app);
         auxFile.write(reinterpret_cast<const char *>(&registro), sizeof(Registro));
         auxFile.close();
 
@@ -118,8 +104,6 @@ public:
         {
             mergeFiles();
         }
-
-        return true;
     }
 
     bool remove(TK key)
@@ -129,11 +113,6 @@ public:
         Registro reg;
 
         std::ifstream file(filename, std::ios::binary);
-
-        if (!file.is_open())
-        {
-            throw std::runtime_error("No se pudo abrir el archivo principal");
-        }
 
         while (file.read(reinterpret_cast<char *>(&reg), sizeof(Registro)))
         {
@@ -155,11 +134,6 @@ public:
 
         std::ofstream outFile(filename, std::ios::binary | std::ios::trunc);
 
-        if (!outFile.is_open())
-        {
-            throw std::runtime_error(" No se pudo abrir el archivo principal");
-        }
-
         for (const auto &r : registros)
         {
             outFile.write(reinterpret_cast<const char *>(&r), sizeof(Registro));
@@ -172,12 +146,6 @@ public:
     int getAuxRecordCount()
     {
         std::ifstream file(aux_filename, std::ios::binary);
-
-        if (!file.is_open())
-        {
-            throw std::runtime_error("No se pudo abrir el archivo auxiliar");
-        }
-
         file.seekg(0, std::ios::end);
         int count = file.tellg() / sizeof(Registro);
         file.close();
@@ -191,11 +159,6 @@ public:
 
         std::ifstream file(filename, std::ios::binary);
 
-        if (!file.is_open())
-        {
-            throw std::runtime_error("No se pudo abrir el archivo principal");
-        }
-
         while (file.read(reinterpret_cast<char *>(&reg), sizeof(Registro)))
         {
             allRecords.push_back(reg);
@@ -203,11 +166,6 @@ public:
         file.close();
 
         file.open(aux_filename, std::ios::binary);
-
-        if (!file.is_open())
-        {
-            throw std::runtime_error("No se pudo abrir el archivo auxiliar");
-        }
 
         while (file.read(reinterpret_cast<char *>(&reg), sizeof(Registro)))
         {
@@ -219,11 +177,6 @@ public:
                   { return a.key < b.key; });
 
         std::ofstream outFile(filename, std::ios::binary | std::ios::trunc);
-        if (!outFile.is_open())
-        {
-            throw std::runtime_error("No se pudo abrir el archivo principal");
-        }
-
         for (const auto &r : allRecords)
         {
             outFile.write(reinterpret_cast<const char *>(&r), sizeof(Registro));
@@ -231,17 +184,16 @@ public:
         outFile.close();
 
         std::ofstream auxFile(aux_filename, std::ios::binary | std::ios::trunc);
-        if (!auxFile.is_open())
-        {
-            throw std::runtime_error("No se pudo abrir el archivo auxiliar");
-        }
         auxFile.close();
     }
-// para el parser
-	friend int buscarSequentialPorNombre(const std::vector<SequentialFile>& avlS, const std::string& nombreBuscado) {
-        int i;
-        for ( i=0 ; i < avlS.size(); ++i) {
-            if (avlS[i].filename == nombreBuscado) {
+
+    // Para el parser
+    friend int buscarSequentialPorNombre(const std::vector<SequentialFile<TK, Registro>> &sqfS, const std::string &nombreBuscado)
+    {
+        for (int i = 0; i < sqfS.size(); ++i)
+        {
+            if (sqfS[i].filename == nombreBuscado)
+            {
                 return i;
             }
         }
