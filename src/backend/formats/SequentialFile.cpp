@@ -1,202 +1,188 @@
+#ifndef EXTENDIBLE_HASH_H
+#define EXTENDIBLE_HASH_H
+
 #include <iostream>
-#include <fstream>
 #include <vector>
+#include <fstream>
+#include <bitset>
+#include <cmath>
 #include <algorithm>
-#include <stdexcept>
 
-#define MAX_AUX_RECORD 50 // Máxima cantidad de registros
+#define MAX_DEPTH 3   // Profundidad máxima del directorio
+#define MAX_FILL 4    // Capacidad máxima de cada bucket
 
-template <typename TK, typename Registro>
-class SequentialFile
-{
+// Clase Bucket
+template <typename TK, typename RecordType>
+class Bucket {
+public:
+    std::vector<RecordType> records;  // Almacenamiento de registros
+    int depth;                   // Profundidad local del bucket
+
+    Bucket(int d) : depth(d) {}
+
+    bool isFull() const {
+        return records.size() >= MAX_FILL;
+    }
+
+    void insert(const RecordType &record) {
+        records.push_back(record);
+    }
+
+    void clear() {
+        records.clear();
+    }
+};
+
+// Clase de Hash Extensible
+template <typename TK, typename RecordType>
+class ExtendibleHashing {
 private:
-    std::string filename;
-    std::string aux_filename;
+    std::vector<Bucket<TK, RecordType> *> buckets;
 
 public:
-    SequentialFile(std::string filename, std::string aux_filename = "")
-    {
-        this->filename = filename;
+    ExtendibleHashing() {
+        buckets.push_back(new Bucket<TK, RecordType>(1));
+        buckets.push_back(new Bucket<TK, RecordType>(1));
 
-        if (aux_filename.empty())
-        {
-            this->aux_filename = "aux_" + filename;
-        }
-        else
-        {
-            this->aux_filename = aux_filename;
+        // Inicializar el archivo index.dat
+        std::ofstream outFile("index.dat", std::ios::binary | std::ios::trunc);
+        if (outFile) {
+            for (int i = 0; i < (1 << MAX_DEPTH); ++i) {
+                outFile.write(reinterpret_cast<const char *>(&i), sizeof(i));
+                int a = i % 2;
+                outFile.write(reinterpret_cast<const char *>(&a), sizeof(a));
+            }
+            outFile.close();
+            std::cout << "Index guardado en index.dat." << std::endl;
+        } else {
+            std::cout << "Error al abrir index.dat." << std::endl;
         }
     }
 
-    Registro search(TK key)
-    {
-        Registro reg;
-        std::ifstream file(filename, std::ios::binary);
-
-        while (file.read(reinterpret_cast<char *>(&reg), sizeof(Registro)))
-        {
-            if (reg.key == key)
-            {
-                file.close();
-                return reg;
-            }
+    ~ExtendibleHashing() {
+        for (auto bucket : buckets) {
+            delete bucket;
         }
-        file.close();
-
-        file.open(aux_filename, std::ios::binary);
-        while (file.read(reinterpret_cast<char *>(&reg), sizeof(Registro)))
-        {
-            if (reg.key == key)
-            {
-                file.close();
-                return reg;
-            }
-        }
-        file.close();
-
-        throw std::runtime_error("Not found");
     }
 
-    std::vector<Registro> rangeSearch(TK begin_key, TK end_key)
-    {
-        std::vector<Registro> results;
-        Registro reg;
-        std::ifstream file(filename, std::ios::binary);
-
-        while (file.read(reinterpret_cast<char *>(&reg), sizeof(Registro)))
-        {
-            if (reg.key >= begin_key && reg.key <= end_key)
-            {
-                results.push_back(reg);
-            }
-        }
-        file.close();
-
-        file.open(aux_filename, std::ios::binary);
-        while (file.read(reinterpret_cast<char *>(&reg), sizeof(Registro)))
-        {
-            if (reg.key >= begin_key && reg.key <= end_key)
-            {
-                results.push_back(reg);
-            }
-        }
-        file.close();
-
-        return results;
+    int hashFunction(TK key) const {
+        return static_cast<int>(key) % (1 << MAX_DEPTH);
     }
 
-    void add(Registro registro)
-    {
-        try
-        {
-            search(registro.key);
+    RecordType find(TK key) {
+        int hashValue = hashFunction(key);
+        int bucketIndex = get_bucket_index(hashValue);
+
+        for (const auto &rec : buckets[bucketIndex]->records) {
+            if (rec.key == key) {
+                return rec;
+            }
+        }
+        throw std::runtime_error("Registro no encontrado.");
+    }
+
+    void insert(const RecordType &record) {
+        int hashValue = hashFunction(record.key);
+        int bucketIndex = get_bucket_index(hashValue);
+
+        for (const auto &rec : buckets[bucketIndex]->records) {
+            if (rec.key == record.key) {
+                std::cout << "El registro con clave " << record.key << " ya existe." << std::endl;
+                return;
+            }
+        }
+
+        if (buckets[bucketIndex]->isFull()) {
+            split(bucketIndex);
+            bucketIndex = get_bucket_index(hashValue);
+        }
+
+        buckets[bucketIndex]->insert(record);
+    }
+
+    void remove(TK key) {
+        int hashValue = hashFunction(key);
+        int bucketIndex = get_bucket_index(hashValue);
+
+        auto &records = buckets[bucketIndex]->records;
+        auto it = std::remove_if(records.begin(), records.end(), [&](const RecordType &rec) {
+            return rec.key == key;
+        });
+
+        if (it != records.end()) {
+            records.erase(it, records.end());
+            std::cout << "Registro con clave " << key << " eliminado." << std::endl;
+        } else {
+            std::cout << "Registro con clave " << key << " no encontrado." << std::endl;
+        }
+    }
+
+    void split(int bucketIndex) {
+        auto oldBucket = buckets[bucketIndex];
+        int oldDepth = oldBucket->depth;
+
+        if (oldDepth >= MAX_DEPTH) {
+            std::cout << "No se puede dividir más, profundidad máxima alcanzada." << std::endl;
             return;
         }
-        catch (const std::runtime_error &)
-        {
+
+        auto newBucket = new Bucket<TK, RecordType>(oldDepth + 1);
+        buckets.push_back(newBucket);
+        int newIndex = buckets.size() - 1;
+
+        std::fstream indexFile("index.dat", std::ios::in | std::ios::out | std::ios::binary);
+        if (!indexFile) {
+            std::cerr << "Error al abrir index.dat" << std::endl;
+            return;
         }
 
-        std::ofstream auxFile(aux_filename, std::ios::binary | std::ios::app);
-        auxFile.write(reinterpret_cast<const char *>(&registro), sizeof(Registro));
-        auxFile.close();
+        for (size_t i = 0; i < (1 << MAX_DEPTH); ++i) {
+            int xdd, currentBucketIndex;
+            indexFile.read(reinterpret_cast<char *>(&xdd), sizeof(xdd));
+            indexFile.read(reinterpret_cast<char *>(&currentBucketIndex), sizeof(currentBucketIndex));
 
-        if (getAuxRecordCount() >= MAX_AUX_RECORD)
-        {
-            mergeFiles();
-        }
-    }
-
-    bool remove(TK key)
-    {
-        bool found = false;
-        std::vector<Registro> registros;
-        Registro reg;
-
-        std::ifstream file(filename, std::ios::binary);
-
-        while (file.read(reinterpret_cast<char *>(&reg), sizeof(Registro)))
-        {
-            if (reg.key != key)
-            {
-                registros.push_back(reg);
-            }
-            else
-            {
-                found = true;
+            if (currentBucketIndex == bucketIndex) {
+                if ((i >> oldDepth) & 1) {
+                    indexFile.seekg(i * (sizeof(int) + sizeof(int)));
+                    indexFile.write(reinterpret_cast<const char *>(&xdd), sizeof(xdd));
+                    indexFile.write(reinterpret_cast<const char *>(&newIndex), sizeof(newIndex));
+                }
             }
         }
-        file.close();
+        indexFile.close();
 
-        if (!found)
-        {
-            return false;
+        // Redistribuir registros
+        std::vector<RecordType> recordsToRedistribute = oldBucket->records;
+        oldBucket->clear();
+        for (const RecordType &record : recordsToRedistribute) {
+            insert(record);
         }
 
-        std::ofstream outFile(filename, std::ios::binary | std::ios::trunc);
-
-        for (const auto &r : registros)
-        {
-            outFile.write(reinterpret_cast<const char *>(&r), sizeof(Registro));
-        }
-        outFile.close();
-
-        return true;
+        oldBucket->depth++;
+        newBucket->depth = oldBucket->depth;
     }
 
-    int getAuxRecordCount()
-    {
-        std::ifstream file(aux_filename, std::ios::binary);
-        file.seekg(0, std::ios::end);
-        int count = file.tellg() / sizeof(Registro);
-        file.close();
-        return count;
-    }
-
-    void mergeFiles()
-    {
-        std::vector<Registro> allRecords;
-        Registro reg;
-
-        std::ifstream file(filename, std::ios::binary);
-
-        while (file.read(reinterpret_cast<char *>(&reg), sizeof(Registro)))
-        {
-            allRecords.push_back(reg);
-        }
-        file.close();
-
-        file.open(aux_filename, std::ios::binary);
-
-        while (file.read(reinterpret_cast<char *>(&reg), sizeof(Registro)))
-        {
-            allRecords.push_back(reg);
-        }
-        file.close();
-
-        std::sort(allRecords.begin(), allRecords.end(), [](const Registro &a, const Registro &b)
-                  { return a.key < b.key; });
-
-        std::ofstream outFile(filename, std::ios::binary | std::ios::trunc);
-        for (const auto &r : allRecords)
-        {
-            outFile.write(reinterpret_cast<const char *>(&r), sizeof(Registro));
-        }
-        outFile.close();
-
-        std::ofstream auxFile(aux_filename, std::ios::binary | std::ios::trunc);
-        auxFile.close();
-    }
-
-    // Para el parser
-    friend int buscarSequentialPorNombre(const std::vector<SequentialFile<TK, Registro>> &sqfS, const std::string &nombreBuscado)
-    {
-        for (int i = 0; i < sqfS.size(); ++i)
-        {
-            if (sqfS[i].filename == nombreBuscado)
-            {
-                return i;
-            }
+    int get_bucket_index(int i) {
+        std::ifstream inFile("index.dat", std::ios::binary);
+        if (inFile) {
+            int bucketIndex;
+            inFile.seekg(i * (sizeof(int) + sizeof(int)) + sizeof(int));
+            inFile.read(reinterpret_cast<char *>(&bucketIndex), sizeof(bucketIndex));
+            inFile.close();
+            return bucketIndex;
         }
         return -1;
     }
+
+    void displayDatafile() const {
+        std::cout << "\nContenido de los buckets:\n";
+        for (size_t i = 0; i < buckets.size(); ++i) {
+            std::cout << "Bucket " << i << " (Profundidad: " << buckets[i]->depth << "):\n";
+            for (const auto &record : buckets[i]->records) {
+                std::cout << "  Clave: " << record.key << ", Nombre: " << record.name << ", Cantidad: " << record.quantity << "\n";
+            }
+        }
+    }
 };
+
+#endif 
