@@ -144,7 +144,67 @@ La función `remove` está diseñada para la eliminación de un registro en espe
 #### Descripción del Proceso
 
 ## Parser SQL
+### Comandos SQL Implementados:
+**CREATE TABLE**
 
+Crea una tabla en base a un archivo específico y elige la estructura de datos a usar (`AVL`, `Sequential`, o `Hash`).
+   
+``` 
+create table Datitos from file hospitalesopendata using AVL
+```
+
+**INSERT INTO**
+
+Inserta uno o más registros en la tabla especificada. Los registros se proporcionan como parte de la consulta SQL.
+```sql
+insert into Datitos values (1,Presidencia de la República del Perú,Presidencia,/presidencia,www.facebook.com/PresidenciaPeru,www.twitter.com/presidenciaperu,www.instagram.com/presidenciaperu,www.linkedin.com/company/74524807/admin/,www.youtube.com/presidenciaperu,www.tiktok.com/@presidenciaperu)
+```
+
+**SELECT**
+      
+SELECT * FROM ... WHERE: Permite realizar búsquedas basadas en elcampo clave (`id`)
+
+```sql
+select * from Datitos where id = 3
+```
+
+SELECT * FROM ... WHERE ... BETWEEN: Realiza búsquedas en un rango de claves.
+
+```sql
+select * from Datitos where id between 3 and 17
+```
+
+**DELETE FROM**: Elimina un registro basado en su `id`.
+```	sql
+delete from Datitos where id = 3
+```
+
+### Componentes Clave
+
+#### 1. Tokenización
+- La función `tokenize` toma una consulta SQL como una cadena de texto y la divide en un vector de **tokens** (palabras clave). Estos tokens son interpretados por el parser para identificar las acciones a realizar, como:
+  - Crear una tabla
+  - Insertar registros
+  - Seleccionar datos
+  - Eliminar registros
+
+#### 2. Manejo de valores
+- La función `extraerRegistros` toma la porción de la consulta SQL que contiene los valores a insertar, los **tokeniza** y organiza en un vector de cadenas. Esto permite que los valores se conviertan en registros completos como `HospitalRecord` o `SocialRecord`.
+  
+- Estos registros son insertados adecuadamente en las estructuras de datos como **AVL**, **SequentialFile**, o **Extendible Hashing**, permitiendo una manipulación eficiente de los datos en el sistema.
+
+**Ejemplo de Consulta SQL**
+
+```sql
+insert into Datitos values 
+(5577,GOBIERNO REGIONAL,Hospital Amazónico-Yarinacocha,
+HOSPITALES O ClínicaS de ATENCION GENERAL,ESTABLECIMIENTO de
+SALUD CON INTERNAMIENTO,Ucayali,CoronelPortillo,Yarinacocha,250105,Jirón Aguaytía
+605,(061)596408,ACTIVO,165,20175940015),(1234, GOBIERNO REGIONAL,
+Hospital Regional de Cusco,HOSPITALES O ClínicaS de ATENCION GENERAL,
+ESTABLECIMIENTO de SALUDCON INTERNAMIENTO,Cusco,Cusco,Cusco,080101,
+Avenida Cultura 1234, (084)567891,ACTIVO,200,20112345678)
+```
 ## Experimentación
 
 ### Cuadro Comparativo de Técnicas de Indexación
