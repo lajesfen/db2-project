@@ -93,7 +93,7 @@ std::vector<HospitalRecord> readHospitalFromCSV() {
 
 std::vector<SocialRecord> readSocialFromCSV() {
     std::vector<SocialRecord> res;
-    std::ifstream file("directorioderes.csv");
+    std::ifstream file("directorioredes.csv");
     std::string line;
 
     getline(file, line);
