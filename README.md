@@ -6,14 +6,14 @@ Comprender y aplicar de manera efectiva las técnicas de organización e indexac
 
 ### Objetivos
 
-**1. Analizar diferentes técnicas de indexación:**
+  **1. Analizar diferentes técnicas de indexación:**
 
-  * Implementar las técnicas AVL File, Sequential File y Extendible Hashing.
-  * Comparar el tiempo y eficiencia de consultas con distintas técnicas.
+   * Implementar las técnicas AVL File, Sequential File y Extendible Hashing.
+   * Comparar el tiempo y eficiencia de consultas con distintas técnicas.
 
-**2. Implementar las operaciones de búsqueda específica, búsqueda por rango, agregar y eliminación de un registro.**
+  **2. Implementar las operaciones de búsqueda específica, búsqueda por rango, agregar y eliminación de un registro.**
 
-**3. Creación de una interfaz gráfica para la manipulación de la base de datos y realización de consultas SQL.**
+  **3. Creación de una interfaz gráfica para la manipulación de la base de datos y realización de consultas SQL.**
 
 ### Resultados Esperados
 
@@ -38,8 +38,8 @@ Para cada una de las técnicas de indexación se implementaron las siguientes fu
 
 Se utilizaron los datasets de la [Plataforma Nacional de Datos Abiertos](https://www.datosabiertos.gob.pe/).
 
-- [](insertar link)
-- [](Insertar link)
+- [Directorio de Establecimientos de Salud](https://www.datosabiertos.gob.pe/dataset/directorio-de-establecimientos-de-salud/resource/e396181b-457d-470d-a8a6-98d6c8650f47#{})
+- [Directorio Nacional de Redes Sociales](https://www.datosabiertos.gob.pe/dataset/directorio-nacional-de-redes-sociales/resource/19cd3462-0d84-4db2-ad73-88e6cb08db27)
 
 La selección del dataset se baso en los siguientes factores:
 
