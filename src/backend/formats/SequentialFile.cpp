@@ -237,4 +237,14 @@ public:
         }
         auxFile.close();
     }
+// para el parser
+	friend int buscarSequentialPorNombre(const std::vector<SequentialFile>& avlS, const std::string& nombreBuscado) {
+        int i;
+        for ( i=0 ; i < avlS.size(); ++i) {
+            if (avlS[i].filename == nombreBuscado) {
+                return i;
+            }
+        }
+        return -1;
+    }
 };

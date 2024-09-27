@@ -9,27 +9,32 @@ std::string trim(const std::string& str) {
     return str.substr(first, (last - first + 1));
 }
 
-std::vector<std::string> extraerPalabras(const std::string& texto) {
-    std::vector<std::string> palabras;
+std::vector<std::vector<std::string>> extraerRegistros(const std::string& texto) {
+    std::vector<std::vector<std::string>> todos_los_registros;
 
-    size_t inicio = texto.find('(');
-    if (inicio != std::string::npos) {
+    size_t inicio = 0;
+    while ((inicio = texto.find('(', inicio)) != std::string::npos) {
         inicio += 1;
         size_t fin = texto.find(')', inicio);
+
         if (fin != std::string::npos) {
-            // Extraer el contenido dentro de los paréntesis
             std::string contenido = texto.substr(inicio, fin - inicio);
 
             size_t pos = 0;
+            std::vector<std::string> registro_actual;
             while ((pos = contenido.find(',')) != std::string::npos) {
                 std::string palabra = contenido.substr(0, pos);
-                palabras.push_back(trim(palabra));
+                registro_actual.push_back(trim(palabra));
                 contenido.erase(0, pos + 1);
             }
 
-            palabras.push_back(trim(contenido));
+            registro_actual.push_back(trim(contenido));
+
+            todos_los_registros.push_back(registro_actual);
+
+            inicio = fin + 1;
         }
     }
 
-    return palabras;
+    return todos_los_registros;
 }
