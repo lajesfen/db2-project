@@ -10,9 +10,10 @@ import {
 
 interface TableProps {
     data: any[];
+    time: number | null;
 }
 
-export default function Table({ data }: TableProps) {
+export default function Table({ data, time }: TableProps) {
     const [pagination, setPagination] = useState<PaginationState>({
         pageIndex: 0,
         pageSize: 10,
@@ -57,78 +58,81 @@ export default function Table({ data }: TableProps) {
     })
 
     return (
-        <div className="p-2 w-full overflow-x-scroll overflow-y-hidden">
+        <div className="w-full overflow-hidden">
             {data.length === 0 ? (
                 <div className='flex justify-center'>
-                    <p>Loading data...</p>
+                    <p>...</p>
                 </div>
             ) : (
-                <table className="w-full text-center table-fixed">
-                    <thead>
-                        {table.getHeaderGroups().map(headerGroup => (
-                            <tr key={headerGroup.id}>
-                                {headerGroup.headers.map(header => {
-                                    return (
-                                        <th key={header.id} className={`border ${header.id == 'n' ? 'w-10' : ''}`}>
-                                            {header.isPlaceholder ? null : (
-                                                <div>
-                                                    {flexRender(
-                                                        header.column.columnDef.header,
-                                                        header.getContext()
-                                                    )}
-                                                </div>
-                                            )}
-                                        </th>
-                                    )
-                                })}
-                            </tr>
-                        ))}
-                    </thead>
-                    <tbody className='text-sm'>
-                        {table.getRowModel().rows.map(row => {
-                            return (
-                                <tr key={row.id}>
-                                    {row.getVisibleCells().map(cell => {
+                <div className='overflow-x-scroll'>
+                    <table className="text-center table">
+                        <thead>
+                            {table.getHeaderGroups().map(headerGroup => (
+                                <tr key={headerGroup.id}>
+                                    {headerGroup.headers.map(header => {
                                         return (
-                                            <td key={cell.id} className='border p-2 overflow-scroll'>
-                                                {flexRender(
-                                                    cell.column.columnDef.cell,
-                                                    cell.getContext()
+                                            <th key={header.id} className={`px-2 border ${header.id == 'n' ? 'w-10' : ''}`}>
+                                                {header.isPlaceholder ? null : (
+                                                    <div>
+                                                        {flexRender(
+                                                            header.column.columnDef.header,
+                                                            header.getContext()
+                                                        )}
+                                                    </div>
                                                 )}
-                                            </td>
+                                            </th>
                                         )
                                     })}
                                 </tr>
-                            )
-                        })}
-                    </tbody>
-                </table>
+                            ))}
+                        </thead>
+                        <tbody className='text-sm'>
+                            {table.getRowModel().rows.map(row => {
+                                return (
+                                    <tr key={row.id}>
+                                        {row.getVisibleCells().map(cell => {
+                                            return (
+                                                <td key={cell.id} className='border p-2 text-nowrap overflow-x-auto'>
+                                                    {flexRender(
+                                                        cell.column.columnDef.cell,
+                                                        cell.getContext()
+                                                    )}
+                                                </td>
+                                            )
+                                        })}
+                                    </tr>
+                                )
+                            })}
+                        </tbody>
+                    </table>
+                </div>
             )}
-            <div className='flex flex-col mt-8'>
+            <div className='flex flex-col'>
+                <div className='text-sm p-1 mb-4'>{data.length} Rows {time ? `in ${time.toFixed(2)} ms` : ""}</div>
                 <div className="flex items-center gap-2">
                     <button
-                        className="border rounded p-1"
+                        className={`border rounded p-1 bg-gray-50 ${table.getCanPreviousPage() ? 'hover:bg-gray-100' : ''}`}
                         onClick={() => table.setPageIndex(0)}
                         disabled={!table.getCanPreviousPage()}
                     >
                         {'<<'}
                     </button>
                     <button
-                        className="border rounded p-1"
+                        className={`border rounded p-1 bg-gray-50 ${table.getCanPreviousPage() ? 'hover:bg-gray-100' : ''}`}
                         onClick={() => table.previousPage()}
                         disabled={!table.getCanPreviousPage()}
                     >
                         {'<'}
                     </button>
                     <button
-                        className="border rounded p-1"
+                        className={`border rounded p-1 bg-gray-50 ${table.getCanPreviousPage() ? 'hover:bg-gray-100' : ''}`}
                         onClick={() => table.nextPage()}
                         disabled={!table.getCanNextPage()}
                     >
                         {'>'}
                     </button>
                     <button
-                        className="border rounded p-1"
+                        className={`border rounded p-1 bg-gray-50 ${table.getCanPreviousPage() ? 'hover:bg-gray-100' : ''}`}
                         onClick={() => table.setPageIndex(table.getPageCount() - 1)}
                         disabled={!table.getCanNextPage()}
                     >
@@ -168,7 +172,6 @@ export default function Table({ data }: TableProps) {
                         ))}
                     </select>
                 </div>
-                <div>{table.getRowModel().rows.length} Rows</div>
             </div>
         </div>
     )
