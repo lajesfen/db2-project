@@ -6,14 +6,18 @@ Comprender y aplicar de manera efectiva las técnicas de organización e indexac
 
 ### Objetivos
 
-  **1. Analizar diferentes técnicas de indexación:**
+1. **Analizar diferentes técnicas de indexación:**
+   - Implementar las técnicas AVL File, Sequential File y Extendible Hashing.
+   - Comparar el tiempo y eficiencia de consultas con distintas técnicas.
 
-   * Implementar las técnicas AVL File, Sequential File y Extendible Hashing.
-   * Comparar el tiempo y eficiencia de consultas con distintas técnicas.
+2. **Implementar las operaciones:**
+   - Búsqueda específica.
+   - Búsqueda por rango.
+   - Agregación y eliminación de un registro.
 
-  **2. Implementar las operaciones de búsqueda específica, búsqueda por rango, agregar y eliminación de un registro.**
-
-  **3. Creación de una interfaz gráfica para la manipulación de la base de datos y realización de consultas SQL.**
+3. **Crear una interfaz gráfica:**
+   - Manipulación de la base de datos.
+   - Realización de consultas SQL.
 
 ### Resultados Esperados
 
