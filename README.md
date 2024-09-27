@@ -2,18 +2,18 @@
 
 ## Introducción
 
-Comprender y aplicar de manera efectiva las técnicas de organización e indexación de archivos físicos con el fin de desarrollar un mini gestor de bases de datos, que optimice la gestión, almacenamiento y recuperación de datos estructurados dentro de un modelo relacional basado en tablas.
+Comprender y aplicar de manera efectiva las técnicas de organización e indexación de archivos físicos con el desarrollo de un gestor de bases de datos, que optimice la gestión, almacenamiento y recuperación de datos de un `dataset`.
 
 ### Objetivos
 
-1. Analizar diferentes técnicas de indexación:
+**1. Analizar diferentes técnicas de indexación:**
 
-* Implementar las técnicas AVL File, Sequential File y Extendible Hashing.
-* Comparar el tiempo y eficiencia de consultas con distintas de técnicas.
+  * Implementar las técnicas AVL File, Sequential File y Extendible Hashing.
+  * Comparar el tiempo y eficiencia de consultas con distintas técnicas.
 
-2. Implementar las operaciones de búsqueda específica, búsqueda por rango, agregar y eliminación de un registro.
+**2. Implementar las operaciones de búsqueda específica, búsqueda por rango, agregar y eliminación de un registro.**
 
-3. Creación de una interfaz gráfica para la manipulación de la base de datos y realización de consultas SQL.
+**3. Creación de una interfaz gráfica para la manipulación de la base de datos y realización de consultas SQL.**
 
 ### Resultados Esperados
 
@@ -51,6 +51,8 @@ La selección del dataset se baso en los siguientes factores:
 
 #### Estructura de cada registro
 
+#### **Social Record**
+
 | Campo         | Tipo de Dato         | Descripción                                                                                  |
 |---------------|----------------------|----------------------------------------------------------------------------------------------|
 | `id`          | `int`                | Id único del registro.                                                                       |
@@ -64,6 +66,7 @@ La selección del dataset se baso en los siguientes factores:
 | `youtube`     | `char[90]`           | URL del canal oficial de YouTube.                                                            |
 | `tiktok`      | `char[60]`           | URL del perfil oficial de TikTok.                                                            |
 
+#### **Hospital Record**
 
 | Campo          | Tipo de Dato        | Descripción                                                                                |
 |----------------|---------------------|--------------------------------------------------------------------------------------------|
