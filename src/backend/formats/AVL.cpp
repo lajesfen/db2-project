@@ -6,92 +6,122 @@
 #include <cstring>
 
 template <typename TK, typename RecordType>
-class AVLFile {
+class AVLFile
+{
 private:
     std::string filename;
     long pos_root;
     const long offset = sizeof(pos_root);
 
 public:
-    AVLFile(std::string filename) {
+    AVLFile(std::string filename)
+    {
         this->filename = filename;
         this->pos_root = -1;
 
         std::fstream file(filename, std::ios::in | std::ios::out | std::ios::binary);
-        if(!file.is_open()) {
+        if (!file.is_open())
+        {
             file.open(filename, std::ios::out | std::ios::binary);
-            file.write((char*) &pos_root, offset);
+            file.write((char *)&pos_root, offset);
             file.close();
-        } else {
+        }
+        else
+        {
             loadRootPos();
         }
         file.close();
     }
 
-    ~AVLFile() {
+    ~AVLFile()
+    {
         saveRootPos();
     }
 
-    RecordType find(TK key) {
+    RecordType find(TK key)
+    {
         return find(pos_root, key);
     }
 
-    RecordType find(long pos, TK key) {
-        if(pos == -1) {
+    RecordType find(long pos, TK key)
+    {
+        if (pos == -1)
+        {
             return RecordType{};
         }
 
         auto temp = getRecord(pos);
-        if (key < temp.id) {
+        if (key < temp.id)
+        {
             return find(temp.left, key);
-        } else if (key > temp.id) {
+        }
+        else if (key > temp.id)
+        {
             return find(temp.right, key);
-        } else {
+        }
+        else
+        {
             return temp;
         }
     }
 
-    RecordType getRecord(long pos) {
+    RecordType getRecord(long pos)
+    {
         std::fstream file(filename, std::ios::binary | std::ios::in | std::ios::out);
         RecordType record;
 
         file.seekg(offset + pos * sizeof(RecordType), std::ios::beg);
-        file.read((char*) &record, sizeof(RecordType));
+        file.read((char *)&record, sizeof(RecordType));
         file.close();
         return record;
     }
 
-    void setRecord(long pos, RecordType record) {
+    void setRecord(long pos, RecordType record)
+    {
         std::fstream file(filename, std::ios::binary | std::ios::in | std::ios::out);
 
         file.seekp(offset + pos * sizeof(RecordType), std::ios::beg);
-        file.write((char*) &record, sizeof(RecordType));
+        file.write((char *)&record, sizeof(RecordType));
         file.close();
     }
 
-    void insert(RecordType record) {
+    void insert(RecordType record)
+    {
         insert(pos_root, record);
     }
 
-    void insert(long &pos, RecordType record) {
-        if (pos == -1) {
+    void insert(long &pos, RecordType record)
+    {
+        if (pos == -1)
+        {
             pos = getSize();
             setRecord(pos, record);
-        } else {
+        }
+        else
+        {
             auto temp = getRecord(pos);
 
-            if (record.id < temp.id) {
-                if (temp.left == -1) {
+            if (record.id < temp.id)
+            {
+                if (temp.left == -1)
+                {
                     temp.left = getSize();
                     setRecord(temp.left, record);
-                } else {
+                }
+                else
+                {
                     insert(temp.left, record);
                 }
-            } else if (record.id > temp.id) {
-                if (temp.right == -1) {
+            }
+            else if (record.id > temp.id)
+            {
+                if (temp.right == -1)
+                {
                     temp.right = getSize();
                     setRecord(temp.right, record);
-                } else {
+                }
+                else
+                {
                     insert(temp.right, record);
                 }
             }
@@ -102,46 +132,81 @@ public:
         }
     }
 
-    auto loadRootPos() {
+    std::vector<RecordType> searchByRange(TK lower, TK upper)
+    {
+        std::vector<RecordType> results;
+        searchByRange(pos_root, lower, upper, results);
+        return results;
+    }
+
+    void searchByRange(long pos, TK lower, TK upper, std::vector<RecordType> &results)
+    {
+        if (pos == -1)
+            return;
+
+        RecordType current = getRecord(pos);
+        if (current.id >= lower)
+            searchByRange(current.left, lower, upper, results);
+
+        if (current.id >= lower && current.id <= upper)
+            results.push_back(current);
+
+        if (current.id <= upper)
+            searchByRange(current.right, lower, upper, results);
+    }
+
+    auto loadRootPos()
+    {
         std::ifstream file(filename, std::ios::binary);
         file.seekg(0, std::ios::beg);
-        file.read((char*) &pos_root, offset);
+        file.read((char *)&pos_root, offset);
     }
 
-    auto saveRootPos() {
+    auto saveRootPos()
+    {
         std::fstream file(filename, std::ios::binary | std::ios::in | std::ios::out);
         file.seekp(0, std::ios::beg);
-        file.write((char*) &pos_root, offset);
+        file.write((char *)&pos_root, offset);
     }
 
-    void updateHeight(RecordType &record) {
+    void updateHeight(RecordType &record)
+    {
         int leftHeight = getHeight(record.left);
         int rightHeight = getHeight(record.right);
         record.height = std::max(leftHeight, rightHeight);
     }
 
-    int getHeight(long pos) {
-        if(pos == -1) return -1;
+    int getHeight(long pos)
+    {
+        if (pos == -1)
+            return -1;
         RecordType record = getRecord(pos);
         return record.height;
     }
 
-    int getBalanceFactor(long pos) {
-        if(pos == -1) return 0;
+    int getBalanceFactor(long pos)
+    {
+        if (pos == -1)
+            return 0;
         RecordType record = getRecord(pos);
         return getHeight(record.left) - getHeight(record.right);
     }
 
-    void balance(long &pos) {
-        if(pos == -1) return;
+    void balance(long &pos)
+    {
+        if (pos == -1)
+            return;
 
         RecordType record = getRecord(pos);
         int hb = getBalanceFactor(pos);
-        if (hb > 1) {
+        if (hb > 1)
+        {
             if (getBalanceFactor(record.left) < 0)
                 rotateLeft(record.left);
             rotateRight(pos);
-        } else if (hb < -1) {
+        }
+        else if (hb < -1)
+        {
             if (getBalanceFactor(record.right) > 0)
                 rotateRight(record.right);
             rotateLeft(pos);
@@ -150,7 +215,8 @@ public:
         setRecord(pos, record);
     }
 
-    void rotateRight(long &pos) {
+    void rotateRight(long &pos)
+    {
         RecordType record = getRecord(pos);
         RecordType leftChild = getRecord(record.left);
 
@@ -163,7 +229,8 @@ public:
         setRecord(record.left, leftChild);
     }
 
-    void rotateLeft(long &pos) {
+    void rotateLeft(long &pos)
+    {
         RecordType record = getRecord(pos);
         RecordType rightChild = getRecord(record.right);
 
@@ -176,54 +243,69 @@ public:
         setRecord(record.right, rightChild);
     }
 
-    auto getSize() {
+    auto getSize()
+    {
         std::ifstream file(filename, std::ios::binary);
         file.seekg(0, std::ios::end);
 
         return ((int)file.tellg() - offset) / sizeof(RecordType);
     }
 
-    std::vector<RecordType> inorder() {
+    std::vector<RecordType> inorder()
+    {
         std::vector<RecordType> res;
         inorder(pos_root, res);
 
         return res;
     }
 
-    void inorder(long pos, std::vector<RecordType> &res) {
-        if(pos == -1) return;
+    void inorder(long pos, std::vector<RecordType> &res)
+    {
+        if (pos == -1)
+            return;
 
         RecordType temp = getRecord(pos);
-        if(temp.left != -1) {
+        if (temp.left != -1)
+        {
             inorder(temp.left, res);
         }
         res.push_back(temp);
-        if(temp.right != -1) {
+        if (temp.right != -1)
+        {
             inorder(temp.right, res);
         }
     }
 
-    bool remove(TK key) {
+    bool remove(TK key)
+    {
         return remove(pos_root, key);
     }
 
-    bool remove(long &pos, TK key) {
+    bool remove(long &pos, TK key)
+    {
         std::fstream file(filename, std::ios::binary | std::ios::in | std::ios::out);
 
-        if (pos == -1) return false;
+        if (pos == -1)
+            return false;
         RecordType record = find(key);
 
-        if(record.left == -1 | record.right == -1) {
+        if (record.left == -1 | record.right == -1)
+        {
             long tempPos = (record.left != -1) ? record.left : record.right;
 
-            if (tempPos == -1) {
+            if (tempPos == -1)
+            {
                 pos = -1;
-            } else {
+            }
+            else
+            {
                 RecordType temp = getRecord(pos);
                 record = temp;
                 pos = tempPos;
             }
-        } else {
+        }
+        else
+        {
             long nextPos = getMinValueRecord(record.right);
             RecordType nextNode = getRecord(nextPos);
 
@@ -231,7 +313,8 @@ public:
             remove(record.right, nextNode.id);
         }
 
-        if(pos != -1) {
+        if (pos != -1)
+        {
             updateHeight(record);
             balance(pos);
             setRecord(pos, record);
@@ -240,22 +323,27 @@ public:
         return true;
     }
 
-    auto getMinValueRecord(long pos) {
+    auto getMinValueRecord(long pos)
+    {
         RecordType record = getRecord(pos);
         long temp = pos;
 
-        while(record.left != -1) {
+        while (record.left != -1)
+        {
             temp = record.left;
             record = getRecord(record.left);
         }
         return temp;
     }
 
-    //para ubicar los avls
-    friend int buscarAVLPorNombre(const std::vector<AVLFile>& avlVector, const std::string& nombreBuscado) {
+    // para ubicar los avls
+    friend int buscarAVLPorNombre(const std::vector<AVLFile> &avlVector, const std::string &nombreBuscado)
+    {
         int i;
-        for ( i=0 ; i < avlVector.size(); ++i) {
-            if (avlVector[i].filename == nombreBuscado) {
+        for (i = 0; i < avlVector.size(); ++i)
+        {
+            if (avlVector[i].filename == nombreBuscado)
+            {
                 return i;
             }
         }
