@@ -991,32 +991,164 @@ delete from Datitos where id = 3
 ```
 
 ### Componentes Clave
+### 1. Tokenización
 
-#### 1. Tokenización
+La función `tokenize` toma una consulta SQL como una cadena de texto y la divide en un vector de tokens (palabras clave). Estos tokens son luego interpretados por el parser para identificar las acciones a realizar, como:
 
-- La función `tokenize` toma una consulta SQL como una cadena de texto y la divide en un vector de **tokens** (palabras clave). Estos tokens son interpretados por el parser para identificar las acciones a realizar, como:
-  - Crear una tabla
-  - Insertar registros
-  - Seleccionar datos
-  - Eliminar registros
+- Crear una tabla
+  
+```cpp
+if (tokens[0] == "create" && tokens[1] == "table") {
+   string nombre_archivo = tokens[2];
+   string tipo_dato = tokens[5];
+…
+}
+```
 
-#### 2. Manejo de valores
+- Insertar registros
+  
+```cpp
+else if (tokens[0] == "insert" && tokens[1] == "into") {
+   string nombre = tokens[2];
+   int indexAVL = -1;
+   int indexSequential = -1;
+   int indexHash = -1;
+…}
+```
+- Seleccionar datos
+  
+```cpp
+else if (tokens[0] == "select" && tokens[6] == "=") {
+   string nombreTabla = tokens[3];
+   int key = stoi(tokens[7]);
+…}
 
-- La función `extraerRegistros` toma la porción de la consulta SQL que contiene los valores a insertar, los **tokeniza** y organiza en un vector de cadenas. Esto permite que los valores se conviertan en registros completos como `HospitalRecord` o `SocialRecord`.
-- Estos registros son insertados adecuadamente en las estructuras de datos como **AVL**, **SequentialFile**, o **Extendible Hashing**, permitiendo una manipulación eficiente de los datos en el sistema.
+else if (tokens[0] == "select" && tokens[6] == "between") {
+   string nombreTabla = tokens[3];
+   int keya = stoi(tokens[7]);
+   int keyb = stoi(tokens[9])
 
-**Ejemplo de Consulta SQL**
+```
+- Eliminar registros
+
+```cpp
+else if (tokens[0] == "delete" && tokens[1] == "from" && tokens[5] == "=") {
+   string nombreTabla = tokens[2];
+   int key = stoi(tokens[6]);
+…}
+```
+### Ejemplo de Tokenización:
+
+Consulta SQL de ejemplo:
 
 ```sql
-insert into Datitos values
-(5577,GOBIERNO REGIONAL,Hospital Amazónico-Yarinacocha,
-HOSPITALES O ClínicaS de ATENCION GENERAL,ESTABLECIMIENTO de
-SALUD CON INTERNAMIENTO,Ucayali,CoronelPortillo,Yarinacocha,250105,Jirón Aguaytía
-605,(061)596408,ACTIVO,165,20175940015),(1234, GOBIERNO REGIONAL,
-Hospital Regional de Cusco,HOSPITALES O ClínicaS de ATENCION GENERAL,
-ESTABLECIMIENTO de SALUDCON INTERNAMIENTO,Cusco,Cusco,Cusco,080101,
-Avenida Cultura 1234, (084)567891,ACTIVO,200,20112345678)
+create TABLE hospitales (id, nombre, direccion);
 ```
+
+La función `tokenize` convertirá esta consulta en un vector de tokens como:
+
+```cpp
+vector<string> tokens = tokenize("create table hospitales from file hospitalesopendata using AVL");
+// Resultado: {"create", "table", "hospitales", "from",”file”,”hospitalesopendata”,””using”,”AVL”}
+```
+
+### Código:
+```cpp
+vector<string> tokenize(const string& query) {
+   stringstream ss(query);
+   string token;
+   vector<string> tokens;
+
+   while (ss >> token) {
+       tokens.push_back(token);
+   }
+   return tokens;
+}
+```
+
+## 2. Extracción de Registros
+
+La función `extraerRegistros` toma la porción de la consulta SQL que contiene los valores a insertar, los tokeniza y organiza en un vector de cadenas. Esto permite que los valores se conviertan en registros completos, como `HospitalRecord` o `SocialRecord`.
+
+### Ejemplo de Extracción de Registros:
+
+Consulta SQL de ejemplo:
+```sql
+insert into hospitales values (1,Hospital Central,Av. Siempre Viva);
+```
+
+La función extraerRegistros toma una cadena con valores entre paréntesis y los convierte en un vector de vectores de cadenas. Para cada conjunto de valores entre paréntesis, los separa por comas y organiza cada valor en un vector. Al final, devuelve un vector de registros completos. Además si hay varios parentesis devolvera los valores de cada uno de estos en un vector dentro de una matriz de vectores:
+```cpp
+std::vector<std::vector<std::string>> registros = extraerRegistros("(1,Hospital Central,Av. Siempre Viva)");
+// Resultado: {{"1", "Hospital Central", "Av. Siempre Viva"}}
+```
+
+### Código:
+```cpp
+std::vector<std::vector<std::string>> extraerRegistros(const std::string& texto) {
+   std::vector<std::vector<std::string>> todos_los_registros;
+
+   size_t inicio = 0;
+   while ((inicio = texto.find('(', inicio)) != std::string::npos) {
+       inicio += 1;
+       size_t fin = texto.find(')', inicio);
+
+       if (fin != std::string::npos) {
+           std::string contenido = texto.substr(inicio, fin - inicio);
+
+           size_t pos = 0;
+           std::vector<std::string> registro_actual;
+           while ((pos = contenido.find(',')) != std::string::npos) {
+               std::string palabra = contenido.substr(0, pos);
+               registro_actual.push_back(trim(palabra));
+               contenido.erase(0, pos + 1);
+           }
+           registro_actual.push_back(trim(contenido));
+
+           todos_los_registros.push_back(registro_actual);
+           inicio = fin + 1;
+       }
+   }
+
+   return todos_los_registros;
+}
+```
+
+
+
+### 3. Metadata
+
+La clase `MetadataManager` se encarga de gestionar los metadatos que describen los tipos de archivos (AVL, Secuenciales, Hash) y los tipos de registros que almacenan (como `hospitalesopendata` y `directorioredes`). Estos metadatos se almacenan en un archivo y se cargan en memoria para ser fácilmente accesibles por la clase `SQLParser`.
+
+**Gestión de Metadatos:**
+Cada vez que se crea una nueva tabla con estructuras de datos específicas, los metadatos correspondientes se guardan para asegurar su recuperación en el futuro sin pérdida de información.
+
+### Ejemplo de MetadataManager:
+```cpp
+SQLParser() : metadataManager("metadata.txt") {
+   const auto& metadata = metadataManager.getMetadata();
+   // Los metadatos ahora están accesibles para gestionar las estructuras de datos
+}
+```
+
+Cuando se crea una tabla usando el comando SQL `CREATE TABLE`, el sistema guarda los metadatos correspondientes a traves de `saveMetadata`, lo que permite al parser SQL recuperar y manejar las estructuras de datos adecuadas de manera eficiente. 
+
+```cpp
+if (tokens[0] == "create" && tokens[1] == "table") {
+   string nombre_archivo = tokens[2];
+   string tipo_dato = tokens[5];
+   if (tokens[7] == "AVL") {
+       if (tipo_dato == "hospitalesopendata") {
+           AVLFile<int, HospitalRecord> avlH(nombre_archivo + ".dat");
+           avlHospital.push_back(avlH);
+
+           metadataManager.saveMetadata(nombre_archivo + ".dat", "AVL", tipo_dato);
+           std::cout << "Tabla AVL creada con Registro tipo: " << tipo_dato << std::endl;
+       }
+   }
+}
+```
+
 
 ## Experimentación
 
