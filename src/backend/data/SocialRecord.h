@@ -62,7 +62,7 @@ struct SocialRecord {
     }
 
     auto toJSON() {
-        json res;
+        nlohmann::ordered_json res;
         res["id"] = id;
         res["nombre"] = nombre;
         res["abreviatura"] = abreviatura;

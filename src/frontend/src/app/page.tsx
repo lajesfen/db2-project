@@ -15,6 +15,7 @@ export default function Home() {
 
   const executeQuery = (queryToExecute: string | undefined) => {
     if (!queryToExecute) return;
+    setData([]);
     const startTime = performance.now();
 
     fetch('http://0.0.0.0:18080/query', {
@@ -26,11 +27,11 @@ export default function Home() {
     })
       .then((res) => res.json())
       .then((data) => {
+        console.log(data);
+
         if (data["message"]) {
           setNotification(data["message"]);
-          setData([]);
         } else {
-          console.log(data);
           setData(data);
         }
         const endTime = performance.now();

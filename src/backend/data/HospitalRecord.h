@@ -71,7 +71,7 @@ struct HospitalRecord {
     }
 
     auto toJSON() {
-        json res;
+        nlohmann::ordered_json res;
         res["id"] = id;
         res["institucion"] = institucion;
         res["nombre"] = nombre;

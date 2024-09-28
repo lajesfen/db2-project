@@ -2,8 +2,6 @@
 #include <string>
 #include <fstream>
 #include <sstream>
-#include "../data/HospitalRecord.h"
-#include "../data/SocialRecord.h"
 
 std::vector<HospitalRecord> readHospitalFromCSV() {
     std::vector<HospitalRecord> res;
@@ -48,41 +46,31 @@ std::vector<HospitalRecord> readHospitalFromCSV() {
         record.distrito[sizeof(record.distrito) - 1] = '\0';  // Null-terminate
 
         getline(ss, token, '\t');
-        record.ubigeo = stoi(token);
+        record.ubigeo = token.empty() ? 0 : stoi(token);
 
         getline(ss, token, '\t');
         strncpy(record.direccion, token.c_str(), sizeof(record.direccion) - 1);
         record.direccion[sizeof(record.direccion) - 1] = '\0';  // Null-terminate
 
-        for (int i = 0; i < 9; ++i) {
-            getline(ss, token, '\t');
-        }
+        for (int i = 0; i < 9; ++i) getline(ss, token, '\t');
 
         getline(ss, token, '\t');
         strncpy(record.telefono, token.c_str(), sizeof(record.telefono) - 1);
         record.telefono[sizeof(record.telefono) - 1] = '\0';  // Null-terminate
 
-        for (int i = 0; i < 5; ++i) {
-            getline(ss, token, '\t');
-        }
+        for (int i = 0; i < 5; ++i) getline(ss, token, '\t');
 
         getline(ss, token, '\t');
         strncpy(record.estado, token.c_str(), sizeof(record.estado) - 1);
         record.estado[sizeof(record.estado) - 1] = '\0';  // Null-terminate
 
-        for (int i = 0; i < 3; ++i) {
-            getline(ss, token, '\t');
-        }
+        for (int i = 0; i < 3; ++i) getline(ss, token, '\t');
 
         getline(ss, token, '\t');
-        if (token.empty()) {
-            record.camas = 0;
-        } else {
-            record.camas = stoi(token);
-        }
+        record.camas = token.empty() ? 0 : stoi(token);
 
         getline(ss, token, '\t');
-        record.ruc = stol(token);
+        record.ruc = token.empty() ? 0 : stoll(token);
 
         res.push_back(record);
     }

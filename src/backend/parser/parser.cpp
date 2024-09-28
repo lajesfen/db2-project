@@ -110,9 +110,9 @@ public:
         }
     }
 
-    json parse(const std::string& query) {
+    nlohmann::ordered_json parse(const std::string& query) {
         auto tokens = tokenize(query);
-        json response;
+        nlohmann::ordered_json response;
 
         if (tokens.empty()) {
             cout << "Consulta vacía\n";
@@ -130,13 +130,12 @@ public:
             if (tokens[7] == "AVL") {
                 if (tipo_dato == "hospitalesopendata") {
                     AVLFile<int, HospitalRecord> avlH(nombre_archivo + ".dat");
-                    avlHospital.push_back(avlH);
-
                     metadataManager.saveMetadata(nombre_archivo+".dat","AVL",tipo_dato);
 
                     for(auto data : hospitalData) {
                         avlH.insert(data);
                     }
+                    avlHospital.push_back(std::move(avlH));
 
                     std::cout << "Tabla AVL creada con Registro tipo: " << tipo_dato << std::endl;
                     response["message"] = "Tabla AVL creada con Registro tipo: " + tipo_dato;
@@ -144,13 +143,12 @@ public:
 
                 } else if (tipo_dato == "directorioredes") {
                     AVLFile<int, SocialRecord> avlS(nombre_archivo + ".dat");
-                    avlSocial.push_back(avlS);
-
                     metadataManager.saveMetadata(nombre_archivo+".dat","AVL",tipo_dato);
 
                     for(auto data : redesData) {
                         avlS.insert(data);
                     }
+                    avlSocial.push_back(std::move(avlS));
 
                     std::cout << "Tabla AVL creada con Registro tipo: " << tipo_dato << std::endl;
                     response["message"] = "Tabla AVL creada con Registro tipo: " + tipo_dato;
@@ -159,13 +157,12 @@ public:
             } else if (tokens[7] == "sequential") {
                 if (tipo_dato == "hospitalesopendata") {
                     SequentialFile<int, HospitalRecord> seqH(nombre_archivo + ".dat");
-                    sequentialHospital.push_back(seqH);
-
                     metadataManager.saveMetadata(nombre_archivo+".dat","Sequential",tipo_dato);
 
                     for(auto data : hospitalData) {
                         seqH.add(data);
                     }
+                    sequentialHospital.push_back(std::move(seqH));
 
                     std::cout << "Tabla Sequential creada con Registro tipo: " << tipo_dato << std::endl;
                     response["message"] = "Tabla Sequential creada con Registro tipo: " + tipo_dato;
@@ -173,13 +170,12 @@ public:
 
                 } else if (tipo_dato == "directorioredes") {
                     SequentialFile<int, SocialRecord> seqS(nombre_archivo + ".dat");
-                    sequentialSocial.push_back(seqS);
-
                     metadataManager.saveMetadata(nombre_archivo+".dat","Sequential",tipo_dato);
 
                     for(auto data : redesData) {
                         seqS.add(data);
                     }
+                    sequentialSocial.push_back(std::move(seqS));
 
                     std::cout << "Tabla Sequential creada con Registro tipo: " << tipo_dato << std::endl;
                     response["message"] = "Tabla Sequential creada con Registro tipo: " + tipo_dato;
@@ -189,13 +185,12 @@ public:
             else if (tokens[7] == "hash") {
                 if (tipo_dato == "hospitalesopendata") {
                     ExtendibleHashing<int,HospitalRecord> hashTable(nombre_archivo+".dat");
-                    extendibleHR.push_back(hashTable);
-
                     metadataManager.saveMetadata(nombre_archivo+".dat","Hash",tipo_dato);
 
                     for(auto data : hospitalData) {
                         hashTable.insert(data);
                     }
+                    extendibleHR.push_back(std::move(hashTable));
 
                     std::cout << "Tabla Hash creada con Registro tipo: " << tipo_dato << std::endl;
                     response["message"] = "Tabla Hash creada con Registro tipo: " + tipo_dato;
@@ -203,13 +198,12 @@ public:
 
                 } else if (tipo_dato == "directorioredes") {
                     ExtendibleHashing<int,SocialRecord> hashTable(nombre_archivo+".dat");
-                    extendibleSR.push_back(hashTable);
-
                     metadataManager.saveMetadata(nombre_archivo+".dat","Hash",tipo_dato);
 
                     for(auto data : redesData) {
                         hashTable.insert(data);
                     }
+                    extendibleSR.push_back(std::move(hashTable));
 
                     std::cout << "Tabla Hash creada con Registro tipo: " << tipo_dato << std::endl;
                     response["message"] = "Tabla Hash creada con Registro tipo: " + tipo_dato;
@@ -355,6 +349,61 @@ public:
                         }
                     }
                 }
+                return response;
+            }
+        }
+
+        // SELECT ALL
+        else if (tokens[0] == "select") {
+            string nombreTabla = tokens[3];
+            int indexAVL = buscarAVLPorNombre(avlHospital, nombreTabla + ".dat");
+            int indexSequential = buscarSequentialPorNombre(sequentialHospital, nombreTabla + ".dat");
+            int HashIndex=buscarExtendibleHashing(extendibleHR,nombreTabla+".dat");
+
+            if (indexAVL != -1) {
+                auto registros = avlHospital[indexAVL].inorder();
+                for(auto registro : registros) {
+                    response.push_back(registro.toJSON());
+                }
+                return response;
+            } else if (indexSequential != -1) {
+//                HospitalRecord registros = sequentialHospital[indexSequential];
+//                response.push_back(registros.toJSON());
+                return response;
+            } else if(HashIndex!=-1) {
+//                HospitalRecord registroH=extendibleHR[HashIndex];
+//                response.push_back(registroH.toJSON());
+                return response;
+            }
+
+            else {
+                indexAVL = buscarAVLPorNombre(avlSocial, nombreTabla + ".dat");
+                indexSequential=buscarSequentialPorNombre(sequentialSocial,nombreTabla+".dat");
+                HashIndex=buscarExtendibleHashing(extendibleSR,nombreTabla+".dat");
+                if (indexAVL != -1) {
+                    auto registros = avlSocial[indexAVL].inorder();
+                    for(auto registro : registros) {
+                        response.push_back(registro.toJSON());
+                    }
+                    return response;
+                } else if(indexSequential!=-1) {
+                    indexSequential = buscarSequentialPorNombre(sequentialSocial, nombreTabla + ".dat");
+                    if (indexSequential != -1) {
+//                        SocialRecord registros = sequentialSocial[indexSequential].search(key);
+//                        response.push_back(registros.toJSON());
+                        return response;
+                    }
+                }
+                else if(HashIndex!=-1) {
+//                    SocialRecord registroS=extendibleSR[HashIndex].find(key);
+//                    response.push_back(registroS.toJSON());
+                    return response;
+                }
+            }
+
+            if (indexAVL == -1 && indexSequential == -1 and HashIndex) {
+                cout << "Tabla no encontrada para buscar.\n";
+                response["message"] = "Tabla no encontrada para buscar.";
                 return response;
             }
         }
