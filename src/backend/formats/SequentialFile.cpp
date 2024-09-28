@@ -89,13 +89,10 @@ public:
 
     void add(Registro registro)
     {
-        try
+        Registro existingRecord = search(registro.id);
+        if (existingRecord.id == registro.id)
         {
-            search(registro.id);
             return;
-        }
-        catch (const std::runtime_error &)
-        {
         }
 
         std::ofstream auxFile(aux_filename, std::ios::binary | std::ios::app);
@@ -128,9 +125,7 @@ public:
         file.close();
 
         std::sort(allRecords.begin(), allRecords.end(), [](const Registro &a, const Registro &b)
-        {
-            return a.id < b.id;
-        });
+                  { return a.id < b.id; });
 
         return allRecords;
     }
