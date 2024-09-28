@@ -9,7 +9,7 @@ import Notification from './components/Notification';
 
 export default function Home() {
   const [data, setData] = useState([]);
-  const [query, setQuery] = useState(`create table Datitos from file hospitalesopendata using AVL\n`);
+  const [query, setQuery] = useState(`create table Datos from file hospitalesopendata using AVL\nselect * from Datos\nselect * from Datos where id = 868\nselect * from Datos where id between 0 and 800\ninsert into Datos values (894,"MINSA","Hospital de Prueba","HOSPITALES O ClínicaS de ATENCION GENERAL","ESTABLECIMIENTO de SALUD CON INTERNAMIENTO","Lima","Lima","Barranco",150103,"Jirón Medrano Silva 165 Barranco","012305020","ACTIVO",0,78564544)`);
   const [time, setTime] = useState<number | null>(null);
   const [notification, setNotification] = useState<string | null>(null);
 
@@ -23,7 +23,7 @@ export default function Home() {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: queryToExecute
+      body: queryToExecute.replace(/"/g, "\""),
     })
       .then((res) => res.json())
       .then((data) => {
@@ -51,7 +51,7 @@ export default function Home() {
       </section>
 
       <section className="flex flex-col rounded-md p-3 gap-3 border">
-        <section className="flex h-32 rounded-md p-2 border">
+        <section className="flex min-h-32 h-fit rounded-md p-2 border">
           <Editor
             value={query}
             onValueChange={code => setQuery(code)}

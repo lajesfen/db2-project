@@ -222,32 +222,32 @@ public:
             // AVLFile handling
             indexAVL = buscarAVLPorNombre(avlHospital, nombre + ".dat");
             if (indexAVL != -1) {
-                return handleInsertAVL<HospitalRecord>(tokens, avlHospital[indexAVL]);
+                return handleInsertAVL<HospitalRecord>(query, avlHospital[indexAVL]);
             } else {
                 indexAVL = buscarAVLPorNombre(avlSocial, nombre + ".dat");
                 if (indexAVL != -1) {
-                    return handleInsertAVL<SocialRecord>(tokens, avlSocial[indexAVL]);
+                    return handleInsertAVL<SocialRecord>(query, avlSocial[indexAVL]);
                 }
             }
 
             // SequentialFile handling
             indexSequential = buscarSequentialPorNombre(sequentialHospital, nombre + ".dat");
             if (indexSequential != -1) {
-                return handleInsertSequential<HospitalRecord>(tokens, sequentialHospital[indexSequential]);
+                return handleInsertSequential<HospitalRecord>(query, sequentialHospital[indexSequential]);
             } else {
                 indexSequential = buscarSequentialPorNombre(sequentialSocial, nombre + ".dat");
                 if (indexSequential != -1) {
-                    return handleInsertSequential<SocialRecord>(tokens, sequentialSocial[indexSequential]);
+                    return handleInsertSequential<SocialRecord>(query, sequentialSocial[indexSequential]);
                 }
             }
            // ExtendibleHashing handling
             indexHash = buscarExtendibleHashing(extendibleHR, nombre+".dat");
             if (indexHash != -1) {
-                return handleInsertHash<HospitalRecord>(tokens, extendibleHR[indexHash]);
+                return handleInsertHash<HospitalRecord>(query, extendibleHR[indexHash]);
             } else {
                 indexHash = buscarExtendibleHashing(extendibleSR, nombre+".dat");
                 if (indexHash != -1) {
-                    return handleInsertHash<SocialRecord>(tokens, extendibleSR[indexHash]);
+                    return handleInsertHash<SocialRecord>(query, extendibleSR[indexHash]);
                 }
             }
 
@@ -267,15 +267,27 @@ public:
             int HashIndex=buscarExtendibleHashing(extendibleHR,nombreTabla+".dat");
             if (indexAVL != -1) {
                 HospitalRecord registro = avlHospital[indexAVL].find(key);
-                response.push_back(registro.toJSON());
+                if(registro.id != -1) {
+                    response.push_back(registro.toJSON());
+                    return response;
+                }
+                response["message"] = "No se encontraron datos para esa consulta.";
                 return response;
             } else if (indexSequential != -1) {
                 HospitalRecord registros = sequentialHospital[indexSequential].search(key);
-                response.push_back(registros.toJSON());
+                if(registros.id != -1) {
+                    response.push_back(registros.toJSON());
+                    return response;
+                }
+                response["message"] = "No se encontraron datos para esa consulta.";
                 return response;
             } else if(HashIndex!=-1) {
                 HospitalRecord registroH=extendibleHR[HashIndex].find(key);
-                response.push_back(registroH.toJSON());
+                if(registroH.id != -1) {
+                    response.push_back(registroH.toJSON());
+                    return response;
+                }
+                response["message"] = "No se encontraron datos para esa consulta.";
                 return response;
             }
 
@@ -285,19 +297,31 @@ public:
                 HashIndex=buscarExtendibleHashing(extendibleSR,nombreTabla+".dat");
                 if (indexAVL != -1) {
                     SocialRecord registro = avlSocial[indexAVL].find(key);
-                    response.push_back(registro.toJSON());
+                    if(registro.id != -1) {
+                        response.push_back(registro.toJSON());
+                        return response;
+                    }
+                    response["message"] = "No se encontraron datos para esa consulta.";
                     return response;
                 } else if(indexSequential!=-1) {
                     indexSequential = buscarSequentialPorNombre(sequentialSocial, nombreTabla + ".dat");
                     if (indexSequential != -1) {
                         SocialRecord registros = sequentialSocial[indexSequential].search(key);
-                        response.push_back(registros.toJSON());
+                        if(registros.id != -1) {
+                            response.push_back(registros.toJSON());
+                            return response;
+                        }
+                        response["message"] = "No se encontraron datos para esa consulta.";
                         return response;
                     }
                 }
                  else if(HashIndex!=-1) {
                     SocialRecord registroS=extendibleSR[HashIndex].find(key);
-                    response.push_back(registroS.toJSON());
+                    if(registroS.id != -1) {
+                        response.push_back(registroS.toJSON());
+                        return response;
+                    }
+                    response["message"] = "No se encontraron datos para esa consulta.";
                     return response;
                 }
             }
@@ -325,30 +349,64 @@ public:
 
             if (HashIndex != -1) {
                 vector<HospitalRecord> results = extendibleHR[HashIndex].findRange(keya,keyb);
-                for(auto a:results)
-                    response.push_back(a.toJSON());
-                return response;
+                for(auto &a:results) {
+                    if(a.id != -1)
+                        response.push_back(a.toJSON());
+                }
+
+                if(!response.empty()) {
+                    return response;
+                } else {
+                    response["message"] = "No se encontraron datos para esa consulta.";
+                    return response;
+                }
             } else if (indexSequential != -1) {
                 vector<HospitalRecord> registros = sequentialHospital[indexSequential].rangeSearch(keya, keyb);
                 for (auto &reg : registros) {
-                    response.push_back(reg.toJSON());
+                    if(reg.id != -1)
+                        response.push_back(reg.toJSON());
                 }
-                return response;
+
+                if(!response.empty()) {
+                    return response;
+                } else {
+                    response["message"] = "No se encontraron datos para esa consulta.";
+                    return response;
+                }
             } else {
                 HashIndex = buscarExtendibleHashing(extendibleSR, nombreTabla + ".dat");
                 if (HashIndex != -1) {
                     vector<SocialRecord> results=extendibleSR[HashIndex].findRange(keya,keyb);
-                    for(auto a:results)
-                        response.push_back(a.toJSON());
+                    for(auto &a:results) {
+                        if(a.id != -1)
+                            response.push_back(a.toJSON());
+                    }
+
+                    if(!response.empty()) {
+                        return response;
+                    } else {
+                        response["message"] = "No se encontraron datos para esa consulta.";
+                        return response;
+                    }
                 } else {
                     indexSequential = buscarSequentialPorNombre(sequentialSocial, nombreTabla + ".dat");
                     if (indexSequential != -1) {
                         vector<SocialRecord> registros = sequentialSocial[indexSequential].rangeSearch(keya, keyb);
                         for (auto &reg : registros) {
-                            response.push_back(reg.toJSON());
+                            if(reg.id != -1)
+                                response.push_back(reg.toJSON());
+                        }
+
+                        if(!response.empty()) {
+                            return response;
+                        } else {
+                            response["message"] = "No se encontraron datos para esa consulta.";
+                            return response;
                         }
                     }
                 }
+
+                response["message"] = "No se encontraron datos para esa consulta.";
                 return response;
             }
         }
@@ -367,8 +425,10 @@ public:
                 }
                 return response;
             } else if (indexSequential != -1) {
-//                HospitalRecord registros = sequentialHospital[indexSequential];
-//                response.push_back(registros.toJSON());
+                auto registros = sequentialHospital[indexSequential].getAllRecords();
+                for(auto registro : registros) {
+                    response.push_back(registro.toJSON());
+                }
                 return response;
             } else if(HashIndex!=-1) {
 //                HospitalRecord registroH=extendibleHR[HashIndex];
@@ -389,8 +449,10 @@ public:
                 } else if(indexSequential!=-1) {
                     indexSequential = buscarSequentialPorNombre(sequentialSocial, nombreTabla + ".dat");
                     if (indexSequential != -1) {
-//                        SocialRecord registros = sequentialSocial[indexSequential].search(key);
-//                        response.push_back(registros.toJSON());
+                        auto registros = sequentialSocial[indexSequential].getAllRecords();
+                        for(auto registro : registros) {
+                            response.push_back(registro.toJSON());
+                        }
                         return response;
                     }
                 }
@@ -488,11 +550,11 @@ public:
 
 private:
     template <typename RecordType>
-    json handleInsertAVL(vector<string>& tokens, AVLFile<int, RecordType>& avlFile) {
+    json handleInsertAVL(const string &query, AVLFile<int, RecordType>& avlFile) {
+        vector<vector<string>> contenedor = extraerRegistros(query);
         json response;
 
-        if (tokens.size() >= 5) {
-            vector<vector<string>> contenedor = extraerRegistros(tokens[4]);
+        if (!contenedor.empty()) {
             for (const auto& vect : contenedor) {
                 RecordType registro;
                 registro.llenarDatos(vect);
@@ -509,11 +571,11 @@ private:
     }
 
     template <typename RecordType>
-    json handleInsertSequential(vector<string>& tokens, SequentialFile<int, RecordType>& sequentialFile) {
+    json handleInsertSequential(const string &query, SequentialFile<int, RecordType>& sequentialFile) {
+        vector<vector<string>> contenedor = extraerRegistros(query);
         json response;
 
-        if (tokens.size() >= 5) {
-            vector<vector<string>> contenedor = extraerRegistros(tokens[4]);
+        if (!contenedor.empty()) {
             for (const auto& vect : contenedor) {
                 RecordType registro;
                 registro.llenarDatos(vect);
@@ -530,11 +592,11 @@ private:
     }
 
     template<typename RecordType>
-    json handleInsertHash(vector<string>& tokens, ExtendibleHashing<int,RecordType> hash) {
+    json handleInsertHash(const string &query, ExtendibleHashing<int,RecordType> hash) {
+        vector<vector<string>> contenedor = extraerRegistros(query);
         json response;
 
-        if (tokens.size() >= 5) {
-            vector<vector<string>> contenedor = extraerRegistros(tokens[4]);
+        if (!contenedor.empty()) {
             for ( auto vect : contenedor) {
                 RecordType registro;
                 registro.llenarDatos(vect);

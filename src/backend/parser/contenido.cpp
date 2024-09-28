@@ -20,19 +20,26 @@ std::vector<std::vector<std::string>> extraerRegistros(const std::string& texto)
 
         if (fin != std::string::npos) {
             std::string contenido = texto.substr(inicio, fin - inicio);
-
-            size_t pos = 0;
             std::vector<std::string> registro_actual;
-            while ((pos = contenido.find(',')) != std::string::npos) {
-                std::string palabra = contenido.substr(0, pos);
-                registro_actual.push_back(trim(palabra));
-                contenido.erase(0, pos + 1);
+
+            bool inQuotes = false;
+            std::string palabra;
+            for (char c : contenido) {
+                if (c == '"') {
+                    inQuotes = !inQuotes;
+                } else if (c == ',' && !inQuotes) {
+                    registro_actual.push_back(trim(palabra));
+                    palabra.clear();
+                } else {
+                    palabra += c;
+                }
             }
 
-            registro_actual.push_back(trim(contenido));
+            if (!palabra.empty()) {
+                registro_actual.push_back(trim(palabra));
+            }
 
             todos_los_registros.push_back(registro_actual);
-
             inicio = fin + 1;
         }
     }

@@ -47,7 +47,9 @@ public:
     {
         if (pos == -1)
         {
-            return RecordType{};
+            RecordType record;
+            record.id = -1;
+            return record;
         }
 
         auto temp = getRecord(pos);

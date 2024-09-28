@@ -96,7 +96,10 @@ public:
         {
             cout << "Error al abrir " << dataFilename << " para leer." << endl;
         }
-        return RecordType();
+
+        RecordType failRecord;
+        failRecord.id = -1;
+        return failRecord;
     }
 
     // Función para eliminar un registro

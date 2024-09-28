@@ -54,7 +54,9 @@ public:
         }
         file.close();
 
-        throw std::runtime_error("Not found");
+        Registro failReg;
+        failReg.id = -1;
+        return failReg;
     }
 
     std::vector<Registro> rangeSearch(TK begin_key, TK end_key)
@@ -104,6 +106,33 @@ public:
         {
             mergeFiles();
         }
+    }
+
+    std::vector<Registro> getAllRecords()
+    {
+        std::vector<Registro> allRecords;
+        Registro reg;
+
+        std::ifstream file(filename, std::ios::binary);
+        while (file.read(reinterpret_cast<char *>(&reg), sizeof(Registro)))
+        {
+            allRecords.push_back(reg);
+        }
+        file.close();
+
+        file.open(aux_filename, std::ios::binary);
+        while (file.read(reinterpret_cast<char *>(&reg), sizeof(Registro)))
+        {
+            allRecords.push_back(reg);
+        }
+        file.close();
+
+        std::sort(allRecords.begin(), allRecords.end(), [](const Registro &a, const Registro &b)
+        {
+            return a.id < b.id;
+        });
+
+        return allRecords;
     }
 
     bool remove(TK key)
