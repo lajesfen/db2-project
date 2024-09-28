@@ -148,6 +148,24 @@ Esta técnica de indexación utiliza un árbol AVL para mantener el índice bala
    - Calcula la posición en el archivo: `offset + pos * sizeof(RecordType)`.
    - Escribe el contenido de `record` en esa posición del archivo.
 
+#### Función `updateHeight`
+
+   ```cpp
+   void updateHeight(RecordType &record) {
+      int leftHeight = getHeight(record.left);
+      int rightHeight = getHeight(record.right);
+      record.height = std::max(leftHeight, rightHeight);
+   }
+   ```
+
+   - `leftHeight`: Almacena la altura del subárbol izquierdo del nodo actual.
+
+   - `rightHeight`: Almacena la altura del subárbol derecho del nodo actual.
+
+   - La función auxiliar `getHeight` se utiliza para obtener la altura de un subárbol dado. Retorna -1 si el subparbol no existe (es decir, si el nodo hijo es `-1`).
+
+   - La nueva altura del nodo actual se calcula como el máximo entre la altura del subárbol izquierdo y derecho, más 1. Esto se debe a que la altura de un nodo es la mayor altura de sus hijos, más 1 para icnluir al propio nodo.
+
 **SEARCH**
 
 La función `find` está diseñada para la búsqueda de un registro específico mediante su clave en un archivo que implementa un árbol AVL.
