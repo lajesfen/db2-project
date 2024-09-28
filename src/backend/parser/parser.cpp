@@ -8,7 +8,11 @@
 #include "../formats/SequentialFile.cpp"
 #include "../data/HospitalRecord.h"
 #include "../data/SocialRecord.h"
+#include "../formats/ExtendibleHashing.cpp"
 using namespace std;
+
+
+#include "ExtendibleHashing.cpp"
 
 vector<string> tokenize(const string& query) {
     stringstream ss(query);
@@ -21,7 +25,54 @@ vector<string> tokenize(const string& query) {
     return tokens;
 }
 
+class MetadataManager {
+    std::string metadataFile;
+    struct MetadataRecord {
+        std::string fileName;
+        std::string fileType;  // AVL, Sequential, Hash
+        std::string recordType; // hospitalesopendata, directorioredes
+    };
+
+    std::vector<MetadataRecord> metadata;
+
+public:
+    MetadataManager(const std::string& file) : metadataFile(file) {
+        loadMetadata();
+    }
+
+    void loadMetadata() {
+        std::ifstream file(metadataFile);
+        if (!file.is_open()) {
+            std::cout << "No se pudo abrir el archivo de metadatos, creando uno nuevo...\n";
+            return;
+        }
+
+        std::string fileName, fileType, recordType;
+        while (file >> fileName >> fileType >> recordType) {
+            metadata.push_back({fileName, fileType, recordType});
+        }
+        file.close();
+    }
+
+    void saveMetadata(const std::string& fileName, const std::string& fileType, const std::string& recordType) {
+        std::ofstream file(metadataFile, std::ios::app);
+        if (!file.is_open()) {
+            std::cout << "Error al abrir el archivo de metadatos\n";
+            return;
+        }
+        file << fileName << " " << fileType << " " << recordType << "\n";
+        file.close();
+        metadata.push_back({fileName, fileType, recordType}); // Actualizar en memoria
+    }
+
+    const std::vector<MetadataRecord>& getMetadata() const {
+        return metadata;
+    }
+};
 class SQLParser {
+
+    MetadataManager metadataManager;
+
     vector<AVLFile<int, HospitalRecord>> avlHospital;
     vector<AVLFile<int, SocialRecord>> avlSocial;
     vector<SequentialFile<int, HospitalRecord>> sequentialHospital;
@@ -29,6 +80,41 @@ class SQLParser {
     vector<ExtendibleHashing<int,SocialRecord>> extendibleSR;
     vector<ExtendibleHashing<int,HospitalRecord>> extendibleHR;
 public:
+
+    SQLParser() : metadataManager("metadata.txt") {
+        const auto& metadata = metadataManager.getMetadata();
+
+        for (const auto& entry : metadata) {
+            if (entry.fileType == "AVL") {
+                if (entry.recordType == "hospitalesopendata") {
+                    AVLFile<int, HospitalRecord> avl(entry.fileName);
+                    avlHospital.push_back(avl);
+                } else if (entry.recordType == "directorioredes") {
+                    AVLFile<int, SocialRecord> avl(entry.fileName);
+                    avlSocial.push_back(avl);
+                }
+            } else if (entry.fileType == "Sequential") {
+                if (entry.recordType == "hospitalesopendata") {
+                    SequentialFile<int, HospitalRecord> seqFile(entry.fileName);
+                    sequentialHospital.push_back(seqFile);
+                } else if (entry.recordType == "directorioredes") {
+                    SequentialFile<int, SocialRecord> seqFile(entry.fileName);
+                    sequentialSocial.push_back(seqFile);
+                }
+            } else if (entry.fileType == "Hash") {
+                if (entry.recordType == "hospitalesopendata") {
+                    ExtendibleHashing<int, HospitalRecord> hashTable(entry.fileName);
+                    extendibleHR.push_back(hashTable);
+                } else if (entry.recordType == "directorioredes") {
+                    ExtendibleHashing<int, SocialRecord> hashTable(entry.fileName);
+                    extendibleSR.push_back(hashTable);
+                }
+            }
+        }
+    }
+
+
+
     void parse(const std::string& query) {
         auto tokens = tokenize(query);
         if (tokens.empty()) {
@@ -44,20 +130,28 @@ public:
                 if (tipo_dato == "hospitalesopendata") {
                     AVLFile<int, HospitalRecord> avlH(nombre_archivo + ".dat");
                     avlHospital.push_back(avlH);
+
+                    metadataManager.saveMetadata(nombre_archivo+".dat","AVL",tipo_dato);
                     std::cout << "Tabla AVL creada con Registro tipo: " << tipo_dato << std::endl;
                 } else if (tipo_dato == "directorioredes") {
                     AVLFile<int, SocialRecord> avlS(nombre_archivo + ".dat");
                     avlSocial.push_back(avlS);
+
+                    metadataManager.saveMetadata(nombre_archivo+".dat","AVL",tipo_dato);
+
                     std::cout << "Tabla AVL creada con Registro tipo: " << tipo_dato << std::endl;
                 }
             } else if (tokens[7] == "sequential") {
                 if (tipo_dato == "hospitalesopendata") {
                     SequentialFile<int, HospitalRecord> seqH(nombre_archivo + ".dat");
                     sequentialHospital.push_back(seqH);
+                    metadataManager.saveMetadata(nombre_archivo+".dat","Sequential",tipo_dato);
                     std::cout << "Tabla Sequential creada con Registro tipo: " << tipo_dato << std::endl;
                 } else if (tipo_dato == "directorioredes") {
                     SequentialFile<int, SocialRecord> seqS(nombre_archivo + ".dat");
                     sequentialSocial.push_back(seqS);
+                    metadataManager.saveMetadata(nombre_archivo+".dat","Sequential",tipo_dato);
+
                     std::cout << "Tabla Sequential creada con Registro tipo: " << tipo_dato << std::endl;
                 }
             }
@@ -65,10 +159,14 @@ public:
                 if (tipo_dato == "hospitalesopendata") {
                     ExtendibleHashing<int,HospitalRecord> hashTable(nombre_archivo+".dat");
                     extendibleHR.push_back(hashTable);
+                    metadataManager.saveMetadata(nombre_archivo+".dat","Hash",tipo_dato);
+
                     std::cout << "Tabla Hash creada con Registro tipo: " << tipo_dato << std::endl;
                 } else if (tipo_dato == "directorioredes") {
                     ExtendibleHashing<int,SocialRecord> hashTable(nombre_archivo+".dat");
                     extendibleSR.push_back(hashTable);
+                    metadataManager.saveMetadata(nombre_archivo+".dat","Hash",tipo_dato);
+
                     std::cout << "Tabla Hash creada con Registro tipo: " << tipo_dato << std::endl;
                 }
             }
@@ -166,30 +264,24 @@ public:
             string nombreTabla = tokens[3];
             int keya = stoi(tokens[7]);
             int keyb = stoi(tokens[9]);
-            int indexAVL = buscarAVLPorNombre(avlHospital, nombreTabla + ".dat");
+            int HashIndex = buscarExtendibleHashing(extendibleHR, nombreTabla + ".dat");
             int indexSequential = buscarSequentialPorNombre(sequentialHospital, nombreTabla + ".dat");
 
-            if (indexAVL != -1) {
-                /*vector<HospitalRecord> registros = avlHospital[indexAVL].inorder();
-                for (auto &reg : registros) {
-                    if (reg.id >= keya && reg.id <= keyb) {
-                        reg.mostrarDatos();
-                    }
-                }*/
+            if (HashIndex != -1) {
+                vector<HospitalRecord> results=extendibleHR[HashIndex].findRange(keya,keyb);
+                for(auto a:results)
+                    a.mostrarDatos();
             } else if (indexSequential != -1) {
                 vector<HospitalRecord> registros = sequentialHospital[indexSequential].rangeSearch(keya, keyb);
                 for (auto &reg : registros) {
                     reg.mostrarDatos();
                 }
             } else {
-                indexAVL = buscarAVLPorNombre(avlSocial, nombreTabla + ".dat");
-                if (indexAVL != -1) {
-                    /*vector<SocialRecord> registros = avlSocial[indexAVL].inorder();
-                    for (auto &reg : registros) {
-                        if (reg.id >= keya && reg.id <= keyb) {
-                            reg.mostrarDatos();
-                        }
-                    }*/
+                HashIndex = buscarExtendibleHashing(extendibleSR, nombreTabla + ".dat");
+                if (HashIndex != -1) {
+                    vector<SocialRecord> results=extendibleSR[HashIndex].findRange(keya,keyb);
+                    for(auto a:results)
+                        a.mostrarDatos();
                 } else {
                     indexSequential = buscarSequentialPorNombre(sequentialSocial, nombreTabla + ".dat");
                     if (indexSequential != -1) {
@@ -201,7 +293,7 @@ public:
                 }
             }
 
-            if (indexAVL == -1 && indexSequential == -1) {
+            if (HashIndex == -1 && indexSequential == -1) {
                 cout << "Tabla no encontrada para buscar.\n";
             }
         }
@@ -306,6 +398,7 @@ private:
         }
     }
 };
+
 void prueba() {
 //insert into Datitos values (767,Abigail,Salcedo,eee,eer,ttyy,uuuu,ttt,5,www,rrr,ttt,6,785646544),(868,Abigail888888888888888,Salcedo,eee,eer,ttyy,uuuu,ttt,5,www,rrr,ttt,6,78564544)
 //create table Datitos from file hospitalesopendata using AVL
