@@ -141,6 +141,7 @@ La función `search` está diseñada para realizar la búsqueda exacta de un reg
 
       - Este bucle se ejecuta mientras se pueda leer un registro completo del archivo.
 
+
       ```cpp
       while (file.read(reinterpret_cast<char *>(&reg), sizeof(Registro)))
       ```
@@ -148,6 +149,7 @@ La función `search` está diseñada para realizar la búsqueda exacta de un reg
    3. Comparación de claves en el Archivo Principal
 
       - Dentro del bucle, se compara la clave del registro leído (`reg.key`) con la clave buscada (`key`). Si se encuentra una coincidencia, se cierra el archivo y devuelve el registro encontrado.
+
 
       ```cpp
       if (reg.key == key)
@@ -161,11 +163,13 @@ La función `search` está diseñada para realizar la búsqueda exacta de un reg
 
       - Si el registro no se encontró en el archivo principal, se abre el archivo auxiliar.
 
+
       ```cpp
       file.open(aux_filename, std::ios::binary);
       ```
 
       - Al igual que con el archivo principal, se intenta leer registros del archivo auxiliar en un bucle.
+
 
       ```cpp
       while (file.read(reinterpret_cast<char *>(&reg), sizeof(Registro)))
@@ -174,6 +178,7 @@ La función `search` está diseñada para realizar la búsqueda exacta de un reg
    6. Comparación de Claves en el Archivo Auxiliar
 
       - Se compara nuevamente la clave del registro leído con la clave buscada. Si se encuentra una coincidencia se cierra el archivo auxiliar y retorna el registro encontrado.
+
 
       ```cpp
       if (reg.key == key)
@@ -185,7 +190,8 @@ La función `search` está diseñada para realizar la búsqueda exacta de un reg
 
    7. Manejo de excepciones
 
-   - Si el registro no se encuentra en ninguno de los archivos, se lanza una excepción std::runtime_error con el mensaje "Not found". Esto informa al usuario de que no se encontró el registro con la clave especificada.
+      - Si el registro no se encuentra en ninguno de los archivos, se lanza una excepción std::runtime_error con el mensaje "Not found". Esto informa al usuario de que no se encontró el registro con la clave especificada.
+
 
       ```cpp
       throw std::runtime_error("Not found");
@@ -209,17 +215,19 @@ La función `rangeSearch` está diseñada para la búsqueda de registros por ran
 
    2. Lectura de Archivo Principal
 
-   - Este bucle se ejecuta mientras se pueda leer un registro completo del archivo.
-
+      - Este bucle se ejecuta mientras se pueda leer un registro completo del archivo.
+ 
+   
       ```cpp
       while (file.read(reinterpret_cast<char *>(&reg), sizeof(Registro)))
       ```
 
    3. Comparación de Claves
 
-   - Dentro del bucle, se verifica si la clave del registro leído (`reg.key`) está dentro del rango definido por `begin_key` y `end_key`.
+      - Dentro del bucle, se verifica si la clave del registro leído (`reg.key`) está dentro del rango definido por `begin_key` y `end_key`.
 
-   - Si la clave está dentro del rango, se agrega el registro al vector `results`.
+      - Si la clave está dentro del rango, se agrega el registro al vector `results`.
+
 
       ```cpp
       if (reg.key >= begin_key && reg.key <= end_key)
@@ -230,7 +238,8 @@ La función `rangeSearch` está diseñada para la búsqueda de registros por ran
 
    4. Búsqueda y Lectura en el Archivo Auxiliar
 
-   - Si la búsqueda no se limita a los registros en el archivo principal, se abre el archivo auxiliar. Al igual que con el archivo principal, se intenta leer registros del archivo auxiliar en un bucle.
+      - Si la búsqueda no se limita a los registros en el archivo principal, se abre el archivo auxiliar. Al igual que con el archivo principal, se intenta leer registros del archivo auxiliar en un bucle.
+
 
       ```cpp
       file.open(aux_filename, std::ios::binary);
@@ -239,7 +248,8 @@ La función `rangeSearch` está diseñada para la búsqueda de registros por ran
       ```
    5. Comparación de Claves en el Archivo Auxiliar
 
-   - Se compara nuevamente la clave del registro leído con el rango definido por `begin_key` y `end_key`. Si la clave está dentro del rango, se agrega el registro al vector `results`.
+      - Se compara nuevamente la clave del registro leído con el rango definido por `begin_key` y `end_key`. Si la clave está dentro del rango, se agrega el registro al vector `results`.
+
 
       ```cpp
       if (reg.key >= begin_key && reg.key <= end_key)
@@ -254,7 +264,8 @@ La función `rangeSearch` está diseñada para la búsqueda de registros por ran
 Esta función se encarga de fusionar los registros almacenados en el archivo auxiliar y el archivo principal en un único archivo principal ordenado. Se llama cuando el número de registros en el archivo auxiliar alcanza un límite (`MAX_AUX_RECORD`).
 
    1. Lectura del Archivo Principal
-   - Se abre el archivo principal y mientras se pueda leer un registro completo del archivo principal, se agrega cada registro leído al vector `allRecords`.
+      - Se abre el archivo principal y mientras se pueda leer un registro completo del archivo principal, se agrega cada registro leído al vector `allRecords`.
+
 
       ```cpp
       std::ifstream file(filename, std::ios::binary);
@@ -266,8 +277,9 @@ Esta función se encarga de fusionar los registros almacenados en el archivo aux
       file.close();
       ```
    2. Lectura del Archivo Auxiliar
-   - De igual manera que el archivo principal, se lee cada registro del archivo auxiliar y se agrega al vector `allRecords`.
+      - De igual manera que el archivo principal, se lee cada registro del archivo auxiliar y se agrega al vector `allRecords`.
 
+      
       ```cpp
       file.open(aux_filename, std::ios::binary);
 
@@ -279,15 +291,17 @@ Esta función se encarga de fusionar los registros almacenados en el archivo aux
       ```
 
    3. Ordenamiento de Registros
-   - Se ordenan todos los registros almacenados en el vector `allRecords` utilizando la clave de cada registro. La función lambda compara las claves para determinar el orden.
+      - Se ordenan todos los registros almacenados en el vector `allRecords` utilizando la clave de cada registro. La función lambda compara las claves para determinar el orden.
 
+     
       ```cpp
       std::sort(allRecords.begin(), allRecords.end(), [](const Registro &a, const Registro &b){ return a.key < b.key; });
       ```
 
    4. Escritura de Registros en el Archivo Principal
 
-   - Se abre el archivo principal y se trunca (vacía) para que se escriban solo los registros fusionados.
+      - Se abre el archivo principal y se trunca (vacía) para que se escriban solo los registros fusionados.
+
 
       ```cpp
          std::ofstream outFile(filename, std::ios::binary | std::ios::trunc);
@@ -298,7 +312,9 @@ Esta función se encarga de fusionar los registros almacenados en el archivo aux
          outFile.close();
       ```
    5. Vaciar el Archivo Auxiliar
-   - Se trunca el archivo auxiliar, dejandolo vacío después de que se han fusionado sus registros en el archivo principal.
+
+      - Se trunca el archivo auxiliar, dejandolo vacío después de que se han fusionado sus registros en el archivo principal.
+
 
       ```cpp
       std::ofstream auxFile(aux_filename, std::ios::binary |std::ios::trunc);
@@ -307,9 +323,12 @@ Esta función se encarga de fusionar los registros almacenados en el archivo aux
 #### Función `getAuxRecordCount`
 Este método se encarga de contar el número de registros que hay en el archivo auxiliar (`aux_filenae`) y devuelve este conteo.
 
-   - Se abre el archivo auxiliar en modo lectura para leer los datos del archivo sin alterar su contenido.
-   - Se utiliza la función `seekg` para mover el puntero de lectura al final del archivo.
-   - Se obtiene la posición actual del puntero usando `tellg`, se divide por `sizeof(Registro)` (representa el tamaño de cada registro en bytes) para obtener el número total de registros en el archivo. 
+      - Se abre el archivo auxiliar en modo lectura para leer los datos del archivo sin alterar su contenido.
+
+      - Se utiliza la función `seekg` para mover el puntero de lectura al final del archivo.
+
+      - Se obtiene la posición actual del puntero usando `tellg`, se divide por `sizeof(Registro)` (representa el tamaño de cada registro en bytes) para obtener el número total de registros en el archivo. 
+
 
       ```cpp
       int getAuxRecordCount()
@@ -325,7 +344,9 @@ Este método se encarga de contar el número de registros que hay en el archivo 
 #### Descripción del Proceso
 
    1. Registro existente
-   - Antes de realizar la inserción, se intenta buscar el registro utilizando su clave. Si el registro ya existe, se lanza una excepción `std::runtime_error`. La función simplemente retorna sin hacer nada, evitando duplicados.
+
+      - Antes de realizar la inserción, se intenta buscar el registro utilizando su clave. Si el registro ya existe, se lanza una excepción `std::runtime_error`. La función simplemente retorna sin hacer nada, evitando duplicados.
+
 
       ```cpp
       try
@@ -337,7 +358,9 @@ Este método se encarga de contar el número de registros que hay en el archivo 
       ```
 
    2. Escritura del Archivo Auxiliar
-   Se abre el archivo auxiliar y se agrega el nuevo registro al final del archivo.
+      
+      - Se abre el archivo auxiliar y se agrega el nuevo registro al final del archivo.
+
 
       ```cpp
          std::ofstream auxFile(aux_filename, std::ios::binary | std::ios::app);
@@ -345,7 +368,9 @@ Este método se encarga de contar el número de registros que hay en el archivo 
          auxFile.close();
       ```
    3. Verificación y Fusión de Registros
-   - Se verifica si el nÚmero de registros en el archivo auxiliar ha alcanzado el límite máximo (`MAX_AUX_RECORD`). Si alcanza el límite, se llama a la función `mergeFiles` para fusionar los registros en el archivo principal.
+   
+      - Se verifica si el nÚmero de registros en el archivo auxiliar ha alcanzado el límite máximo (`MAX_AUX_RECORD`). Si alcanza el límite, se llama a la función `mergeFiles` para fusionar los registros en el archivo principal.
+
 
       ```cpp
       if (getAuxRecordCount() >= MAX_AUX_RECORD)
@@ -362,8 +387,10 @@ La función `remove` está diseñada para la eliminación de un registro en espe
 
    1. Inicialización de Variables
 
-   - `vector<Registro> registros`: Almacenará todos los registros que no coincidan con la clave de eliminación.
-   - `found = false`: Se inicializará una variable booleana `found` para rastrear si se encontró el registro que se desea eliminar.
+      - `vector<Registro> registros`: Almacenará todos los registros que no coincidan con la clave de eliminación.
+
+      - `found = false`: Se inicializará una variable booleana `found` para rastrear si se encontró el registro que se desea eliminar.
+
 
       ```cpp
       bool remove(TK key)
@@ -374,9 +401,10 @@ La función `remove` está diseñada para la eliminación de un registro en espe
       ```
    2. Lectura de Registros en el Archivo Principal
 
-   - Si la clave del registro actual no coincide con la clave proporcionada, se agrega el registro al vector `registros`.
+      - Si la clave del registro actual no coincide con la clave proporcionada, se agrega el registro al vector `registros`.
 
-   - Caso contrario, se establece `found = true`, indicando que se ha encontrado el registro a eliminar.
+      - Caso contrario, se establece `found = true`, indicando que se ha encontrado el registro a eliminar.
+
 
       ```cpp
       while (file.read(reinterpret_cast<char *>(&reg), sizeof(Registro)))
@@ -393,7 +421,9 @@ La función `remove` está diseñada para la eliminación de un registro en espe
          file.close();
       ```
    3. Verificación de la Existencia del Registro
-   - Si la variable `found` sigue siendo `false`, significa que no se encontró el registro a eliminar. En este caso, la función devuelve `false`.
+       
+       - Si la variable `found` sigue siendo `false`, significa que no se encontró el registro a eliminar. En este caso, la función devuelve `false`.
+
 
       ```cpp
       if (!found)
@@ -402,9 +432,11 @@ La función `remove` está diseñada para la eliminación de un registro en espe
       }
       ```
    4. Escritura de Registros restants
-   - Se abre el archivo principal y se trunca (vacía) para que se puede escribir el contenido actualizado sin el registro eliminado.
+   
+      - Se abre el archivo principal y se trunca (vacía) para que se puede escribir el contenido actualizado sin el registro eliminado.
 
-   - Se escribe cada registro que no coincide con la clase proporcionada en el archivo principal. Esto garantiza que el registro a eliminar no se incluya en el archivo.
+      - Se escribe cada registro que no coincide con la clase proporcionada en el archivo principal. Esto garantiza que el registro a eliminar no se incluya en el archivo.
+
 
       ```cpp
       std::ofstream outFile(filename, std::ios::binary | std::ios::trunc);
