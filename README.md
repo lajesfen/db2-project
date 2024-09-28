@@ -236,7 +236,7 @@ La función `rangeSearch` está diseñada para la búsqueda de registros por ran
       }
       ```
 
-4.  **ADD**
+**ADD**
 
 #### Función `Merge`
 Esta función se encarga de fusionar los registros almacenados en el archivo auxiliar y el archivo principal en un único archivo principal ordenado. Se llama cuando el número de registros en el archivo auxiliar alcanza un límite (`MAX_AUX_RECORD`).
