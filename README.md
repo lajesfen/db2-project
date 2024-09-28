@@ -315,6 +315,76 @@ La función `insert` se encarga de insertar un nuevo registro en el árbol AVL. 
 
       - Se guarda el nodo `temp` actualizado en la posición `pos` del archivo con la función `setRecord()`
 
+**RANGE SEARCH**
+La función `searchByRange` encuentra todos los registros que se encuentran dentro de un rango específico de claves.
+
+#### Función `searchByRange` Principal
+
+   ```cpp
+   std::vector<RecordType> searchByRange(TK lower, TK upper)
+   {
+      std::vector<RecordType> results;
+      searchByRange(pos_root, lower, upper, results);
+      return results;
+   }
+   ```
+
+
+   - El vector results almacenará los registros que caen dentro del rango.
+
+   - Se llama a la función privada `searchByRange` con los parámetros `pos_root`(posición del nodo raíz), `lower`(límite inferior) y `upper`(límite superior), y el vector `results` para almacenar los resultados.
+
+#### Función `searchByRange` Recursiva
+
+   1. Verificación de la Posición
+
+      ```cpp
+      if (pos == -1)
+         return;
+      ```
+
+      - Comprueba si `pos` es igual a `-1`. Este valor indica que hemos llegado a un nodo vacío o no existente.
+
+      - Si es `-1`, la función retorna inmediatamente sin realizar ninguna acción. Esto evita intentos de acceder a registros que no existen.
+
+   2. Obtener el Registro Actual
+
+      ```cpp
+      RecordType current = getRecord(pos);
+      ```
+
+      - Llama a la función `getRecord(pos)` para obtener el registro correspondiente a la posición actual en el árbol AVL. Se utilizará  para comparar su `id` con los límites del rango.
+
+   3. Búsqueda en el Subárbol Izquierdo
+
+      ```cpp
+      if (current.id >= lower)
+         searchByRange(current.left, lower, upper, results);
+      ```
+
+      - Verifica si el `id` del registro actual (`current.id`) es mayor o igual que el límite inferior.
+
+      - Si se cumple, se llama recursivamente a `searchByRange`, pasando el hijo izquierdo, ya que este subárbol puede contener nodos que también caen dentro del rango.
+
+   4. Agregar Registro a Resultados
+
+      ```cpp
+      if (current.id >= lower && current.id <= upper)
+         results.push_back(current);
+      ```
+
+      - Comprueba si el `id` del registro actual está dentro del rango especificado.
+      - Si el `id` está en el rango, se agrega `current` al vector `results`.
+
+   5. Búsqueda en el Subárbol Derecho
+
+      ```cpp
+      if (current.id <= upper)
+         searchByRange(current.right, lower, upper, results);
+      ```
+
+      - Verifica si el `id` del registro actual es menor o igual que el límite superior.
+      - Si es cierto, se llama recursivamene a `searchByRange` en el hijo derecho son mayores que el nodo actual, lo que significa que podrían estar dentro del rango.
 
 **REMOVE**
 
