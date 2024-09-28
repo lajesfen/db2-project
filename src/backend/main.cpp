@@ -1,17 +1,16 @@
 #include "include/crow.h"
 #include "include/crow/middlewares/cors.h"
-#include "formats/AVL.cpp"
-#include "loaders/DataLoader.cpp"
+#include "parser/parser.cpp"
 #include <vector>
 
 int main() {
     crow::App<crow::CORSHandler> app;
+    SQLParser parser;
 
-    CROW_ROUTE(app, "/query").methods(crow::HTTPMethod::POST)([](const crow::request &req) {
-//        auto res = readHospitalFromCSV();
+    CROW_ROUTE(app, "/query").methods(crow::HTTPMethod::POST)([&parser](const crow::request &req) {
+        auto res = parser.parse(req.body);
 
-//        return crow::response(res.dump(-1, ' ', false, json::error_handler_t::ignore));
-        return crow::response("Pong");
+        return crow::response(res.dump(-1, ' ', false, json::error_handler_t::ignore));
     });
 
     app.port(18080).multithreaded().run();
