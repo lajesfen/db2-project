@@ -820,13 +820,134 @@ La función `remove` está diseñada para la eliminación de un registro en espe
 
 ### Extendible Hashing
 
-**SEARCH**
+#### Search
 
-**RANGE SEARCH**
+La función `search` en Extendible Hashing se encarga de buscar un registro específico utilizando la clave de dicho registro. El proceso se basa en calcular el valor de hash de la clave y luego usar este valor para identificar el bucket correspondiente donde puede estar almacenado el registro. Una vez identificado el bucket, la función lee los registros en el archivo de datos, recupera y verifica si alguno de ellos coincide con la clave dada.
 
-**ADD**
+```cpp
+RecordType find(TK codi) {
+    std::ifstream dataFile(dataFilename, std::ios::binary | std::ios::in);
+    RecordType record;
+    if (dataFile) {
+        while (dataFile.read(reinterpret_cast<char *>(&record), sizeof(RecordType))) {
+            if (record.key == codi) {
+                dataFile.close();
+                return record;
+            }
+        }
+        dataFile.close();
+    } else {
+        std::cout << "Error al abrir " << dataFilename << " para leer." << std::endl;
+    }
+    return RecordType();
+}
 
-**REMOVE**
+```
+- Se aplica la función de hash a la clave para obtener el índice del bucket.
+- Se accede al archivo de datos para leer los registros dentro del bucket correspondiente.
+-  Si el registro con la clave proporcionada es encontrado, se devuelve dicho registro.
+-  i no se encuentra, la función devuelve un registro vacío y genera una excepción de "Registro no encontrado".
+
+#### Range Search
+La función `rangeSearch` está diseñada para buscar registros dentro de un rango de claves específicas. Similar al proceso de búsqueda específica, se utiliza la función de hash para determinar los buckets donde podrían estar los registros. Sin embargo, esta vez se buscan múltiples claves en un rango, y se devuelven todos los registros que caigan dentro del intervalo especificado.
+
+
+```cpp
+std::vector<RecordType> findRange(TK lower, TK upper) {
+    std::vector<RecordType> results;
+    std::ifstream dataFile(dataFilename, std::ios::binary | std::ios::in);
+    RecordType record;
+    if (dataFile) {
+        while (dataFile.read(reinterpret_cast<char *>(&record), sizeof(RecordType))) {
+            if (record.key >= lower && record.key <= upper) {
+                results.push_back(record);
+            }
+        }
+        dataFile.close();
+    } else {
+        std::cout << "Error al abrir " << dataFilename << " para leer." << std::endl;
+    }
+    return results;
+}
+```
+
+
+-  Se calcula la función de hash para los valores límite del rango.
+- Se accede al archivo de datos y se leen los registros.
+- Para cada registro, se verifica si su clave cae dentro del rango.
+- Se devuelven todos los registros que cumplen con los criterios de rango.
+
+
+#### Add
+
+
+La función `add` se encarga de insertar un nuevo registro en el archivo de datos utilizando el método de hashing. Si el bucket donde debería ir el registro está lleno, la función divide el bucket (`split`), creando un nuevo bucket y redistribuyendo los registros.
+
+```cpp
+void insert(const RecordType &record) {
+    int hashValue = hashFunction(record.key);
+    int bucketIndex = getBucketIndex(hashValue);
+
+    if (!find(record.key).key) {
+        std::ofstream dataFile(dataFilename, std::ios::binary | std::ios::app);
+        if (dataFile) {
+            dataFile.write(reinterpret_cast<const char *>(&record), sizeof(RecordType));
+            dataFile.close();
+            std::cout << "Registro insertado: " << record.key << std::endl;
+        } else {
+            std::cout << "Error al abrir " << dataFilename << " para escribir." << std::endl;
+        }
+    } else {
+        std::cout << "El registro con código " << record.key << " ya existe." << std::endl;
+    }
+}
+
+```
+
+- Se aplica la función de hash para calcular el índice del bucket donde se insertará el nuevo registro.
+- Se verifica si el registro ya existe en el bucket:
+-- Si ya existe, se cancela la operación de inserción.
+-- Si no existe, el registro se añade al archivo de datos.
+- Si el bucket está lleno, se procede con la operación de split, lo que implica:
+-- Duplicar el directorio de buckets y asignar nuevos índices a los buckets.
+-- Redistribuir los registros entre los buckets existentes y el nuevo bucket creado.
+-- Actualizar el archivo de índice para reflejar los cambios.
+- Finalmente, el registro es insertado en el bucket correspondiente.
+
+#### Remove
+
+La función `remove` se utiliza para eliminar un registro específico del archivo de datos. Similar al proceso de búsqueda, se aplica la función de hash para localizar el bucket donde está almacenado el registro. Luego, se sobrescribe el registro con un registro vacío para marcarlo como eliminado.
+
+```cpp
+void remove(TK key) {
+    std::fstream dataFile(dataFilename, std::ios::binary | std::ios::in | std::ios::out);
+    if (dataFile) {
+        RecordType record;
+        std::streampos pos;
+        while (dataFile.read(reinterpret_cast<char *>(&record), sizeof(RecordType))) {
+            if (record.key == key) {
+                pos = dataFile.tellg() - static_cast<std::streampos>(sizeof(RecordType));
+                dataFile.seekp(pos);
+                RecordType emptyRecord;
+                dataFile.write(reinterpret_cast<const char *>(&emptyRecord), sizeof(RecordType));
+                std::cout << "Registro con código " << key << " eliminado." << std::endl;
+                dataFile.close();
+                return;
+            }
+        }
+        std::cout << "Registro con código " << key << " no encontrado." << std::endl;
+        dataFile.close();
+    } else {
+        std::cout << "Error al abrir " << dataFilename << " para eliminar." << std::endl;
+    }
+}
+```
+
+- Se aplica la función de hash a la clave para obtener el índice del bucket.
+- Se accede al archivo de datos y se busca el registro correspondiente en el bucket.
+- Si se encuentra el registro, este es sobrescrito por un registro vacío.
+- Se actualiza el archivo de datos para reflejar los cambios.
+
 
 ## Parser SQL
 
