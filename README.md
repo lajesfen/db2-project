@@ -110,13 +110,276 @@ La selección del dataset se baso en los siguientes factores:
 
 ### AVL File
 
+Esta técnica de indexación utiliza un árbol AVL para mantener el índice balanceado de los registros almacenados en un archivo. Cada nodo del árbol contiene una clave y un puntero a la ubicación del registro en el archivo. Esto permite realizar búsquedas, inserciones y eliminaciones de manera eficiente, ya que el árbol AVL garantiza que estas operaciones se realicen en tiempo `O(log n)` manteniendo el equilibrio del árbol mediante rotaciones cuando sea necesario.
+
+#### FUNCIONES EXTERNAS EMPLEADAS
+
+#### Función `getRecord`
+   - Lee un registro de una posición específica en el archivo binario y lo devuelve.
+
+   ```cpp
+   std::fstream file(filename, std::ios::binary | std::ios::in | std::ios::out);
+   RecordType record;
+   file.seekg(offset + pos * sizeof(RecordType), std::ios::beg);
+   file.read((char*) &record, sizeof(RecordType));
+   file.close();
+   return record;
+   ```
+
+   - Abre el archivo en modo binario para lectura y escritura.
+   - Calcula la posición del registro en el archivo: `offset + pos * sizeof(RecordType)`.
+   - Lee el contenido de esa posición en la variable `record` de tipo `RecordType`.
+
+#### Función `setRecord`
+
+   - Escribe el contenido del registro en una posición específica del archivo binario. 
+
+   ```cpp
+   void setRecord(long pos, RecordType record) {
+      std::fstream file(filename, std::ios::binary | std::ios::in | std::ios::out);
+
+      file.seekp(offset + pos * sizeof(RecordType), std::ios::beg);
+      file.write((char*) &record, sizeof(RecordType));
+      file.close();
+   }
+   ```
+
+   - Abre el archivo en modo binario para lectura y escritura.
+   - Calcula la posición en el archivo: `offset + pos * sizeof(RecordType)`.
+   - Escribe el contenido de `record` en esa posición del archivo.
+
 **SEARCH**
 
-**RANGE SEARCH**
+La función `find` está diseñada para la búsqueda de un registro específico mediante su clave en un archivo que implementa un árbol AVL.
+
+#### Descripción del Proceso
+
+#### Función `find` Principal
+
+   ```cpp
+   RecordType find(TK key) {
+      return find(pos_root, key);
+   }
+   ```
+
+   - Recibe un parámetro `key`, que es la clave de registro a buscar.
+
+   - Llama a la versión sobrecargada de `find`, que busca recursivamente a partir de la posición `pos_root` (raíz del árbol) utilizand la clave proporcionada.
+
+#### Función `find` Sobrecargada
+
+- Realiza una búsqueda binaria recursiva en el árbol AVL utilizando la clave proporcionada.
+   
+   ```cpp
+   RecordType find(long pos, TK key) {
+      if(pos == -1) {
+         return RecordType{};
+      }
+   ```cpp
+
+   - Si `pos` es `-1`, significa que la posición está vacío o no se encontró el registro. Devuelve un objeto `RecordType` por defecto.
+
+   ```cpp
+   auto temp = getRecord(pos);
+   ```
+   - Se utiliza la función `getRecord` para obtener el registro de la posición `pos` en el archivo.
+
+   **Comparación de Claves**
+
+   ```cpp
+   if (key < temp.id) {
+      return find(temp.left, key);
+   } else if (key > temp.id) {
+      return find(temp.right, key);
+   } else {
+      return temp;
+   }
+   ```
+
+   - Si `key < temp.id`, busca el subárbol izquierdo (`temp.left`).
+
+   - Si `key > temp.id`, busca el subárbol derecho (`temp.right`).
+
+   - Si `key == temp.id`, el registro se encontró y se devuelve (`temp`).
 
 **ADD**
 
+La función `insert` se encarga de insertar un nuevo registro en el árbol AVL. Esta operación involucra actualizar las referencias de los nodos, mantener el balance del árbol y, si es necesario, realizar rotaciones para asegurar que la propiedad del árbol AVL (balanceo) se mantenga.
+
+#### Función `insert` Principal
+
+```cpp
+   void insert(RecordType record) {
+        insert(pos_root, record);
+   }
+```
+
+- Llama a la función `insert(long &pos, RecordType record)`, pasando como argumento `pos_root` (posición de la raíz del árbol).
+
+#### Función `insert` Sobrecargada
+
+   1. Verificación de Nodo Nulo
+
+   ```cpp
+   void insert(long &pos, RecordType record) {
+      if (pos == -1) {
+         pos = getSize();
+         setRecord(pos, record);
+      }
+   ```
+
+   - Comprueba si `pos` es igual a `-1`, lo que indica que se trata de un nodo vacío. `pos = getSize()` guarda la posición actual del archivo y `setRecord(pos, record)` guarda el `record` en la posición `pos` del archivo.
+
+   2. Recuperación del Registro Actual
+
+      ```cpp
+      else {
+         auto temp = getRecord(pos);
+      ```
+
+      - Lee el registro en la posición `pos` desde el archivo y lo almacena en `temp`.
+
+   3. Inserción en el Subárbol Izquierdo
+
+      ```cpp
+      if (record.id < temp.id) {
+         if (temp.left == -1) {
+            temp.left = getSize();
+            setRecord(temp.left, record);
+         } else {
+            insert(temp.left, record);
+         }
+      }
+      ```
+
+      - Si `record.id` es menor que `temp.id`:
+         1. Si `temp.left == -1`, asigna `temp.left` a la última posición disponible (`getSize()`). Además, se inserta el registro en `temp.left` usando `setRecord()`.
+
+         2. Caso contrario, llama a la función `insert(temp.left, record)` recursivamente para intentar insertar el registro en el subárbol izquierdo.
+
+   4. Inserción en Subárbol Derecho
+
+      ```cpp
+      else if (record.id > temp.id) {
+         if (temp.right == -1) {
+            temp.right = getSize();
+            setRecord(temp.right, record);
+         } else {
+            insert(temp.right, record);
+         }
+      }
+      ```
+      
+      - De manera similar que en el anterior paso, si `record.id` es mayor que `temp.id`:
+         1. Si `temp.right == -1`, asigna `temp.right` a la última posición disponible. Además, inserta el registro en `temp.right` utilizando la función `setRecord()`.
+         2. Caso contrario, llama a la función `insert(temp.right, record)` recursivamente para intentar isnertar el registro en el subárbol derecho.
+
+   5. Actualización
+
+      ```cpp
+      updateHeight(temp);
+      balance(pos);
+      setRecord(pos, temp);
+      }
+      ```
+
+      - Se llama a la función `updateHeight()` para actualizar la altura el nodo actual (`temp`) en función de las alturas de sus hijos izquierdos y derechos.
+
+      - Se llama a la función `balance()` para verificar y corregir el balance del subárbol en la posición `pos`. Esta función puede realizar rotaciones si el balance del árbol AVL es alterado.
+
+      - Se guarda el nodo `temp` actualizado en la posición `pos` del archivo con la función `setRecord()`
+
+
 **REMOVE**
+
+La función `remove` se encarga de eliminar un nodo (registro) con una clave (`key`) específica del árbol. 
+
+#### Función `remove` Principal
+
+   ```cpp
+   bool remove(TK key) {
+         return remove(pos_root, key);
+   }
+   ```
+
+   - La función principal llama a una versión recursiva intera del `remove` con la raíz(`pos_root`) como posición inicial.
+
+#### Función `remove` Sobrecargada
+
+   1. Verificar si el Árbol está Vacío
+
+      ```cpp
+      if (pos == -1) return false;
+      ```
+      - Si el `pos` es `-1`, significa que el nodo actual no existe, por lo que no hay nada que eliminar.
+
+   2. Obtener el Registro Actual en la Posición `pos`
+
+      ```cpp
+      RecordType record = find(key);
+      ```
+
+      - Utiliza la función `find` para obtener el registro (nodo) con la clave `key` que deseamos eliminar. Si `find` no encuentra el registro, la ejecución no debería de ocurrir.
+
+   3. Caso 1: Nodo con Cero o Un Hijo
+
+      ```cpp
+      if(record.left == -1 | record.right == -1) {
+                  long tempPos = (record.left != -1) ? record.left : record.right;
+      ```
+
+      - Si el nodo tiene 0 o un solo hijo, se almacena la posición de ese hijo en `tempPos`
+
+      - La condición en `tempPos` se usa para decidir cuál hijo (izquierdo o derecho) se va a usar para reemplazar al nodo eliminado.
+
+      #### Caso 1a: Nodo Hoja (Sin Hijos):
+
+      ```cpp
+      if (tempPos == -1) {
+         pos = -1;
+      }
+      ```
+      - Si se cumple, el nodo no tiene hijos (es un nodo hoja). Simplemente se elimina asignando `pos = -1`.
+
+      #### Caso 1b: Nodo con Hijo:
+
+      ```cpp
+      else {
+         RecordType temp = getRecord(pos);
+         record = temp;
+         pos = tempPos;
+      }
+      ```
+      - Caso contrario, el nodo tiene un solo hijo. Entonces se reemplaza el nodo actual por su hijo (`pos = tempPos`).
+
+   4. Caso 2: Nodo con Dos Hijos
+
+      ```cpp
+      else {
+         long nextPos = getMinValueRecord(record.right);
+         RecordType nextNode = getRecord(nextPos);
+
+         record.id = nextNode.id;
+         remove(record.right, nextNode.id);
+      }
+      ```
+      - Si el nodo tiene dos hijos, se encuentra un sucesor en el subárbol derecho.
+      - La clave del sucesor (`nextNode.id`) se usa para reemplazar la clave del nodo que estamos eliminando (`record.id = nextNode.id`).
+      - Luego, se llama recursivamente a `remove` para eliminar el sucesor del subárbol derecho.
+
+   5. Actualizar y Balancear el Árbol
+
+      ```cpp
+      if(pos != -1) {
+         updateHeight(record);
+         balance(pos);
+         setRecord(pos, record);
+      }
+      ```
+
+      - Después de eliminar el nodo, si `pos != -1`, se actualiza la altura del nodo actual y se balancea el subárbol para restaurar las propiedades de balanceo del AVL.
+      - Finalmente se guarda el nodo actualizado en el archivo con la función `SetRecord()`.
+
 
 ### Sequential File
 
