@@ -5,14 +5,16 @@ import Prism from 'prismjs';
 import 'prismjs/components/prism-sql';
 import 'prismjs/themes/prism-tomorrow.css';
 import Table from './components/Table';
+import Notification from './components/Notification';
 
 export default function Home() {
   const [data, setData] = useState([]);
-  const [query, setQuery] = useState(`CREATE TABLE Customer FROM FILE "C:\\data.csv" USING Hash("DNI");\n`);
+  const [query, setQuery] = useState(`create table Datitos from file hospitalesopendata using AVL\n`);
   const [time, setTime] = useState<number | null>(null);
+  const [notification, setNotification] = useState<string | null>(null);
 
   const executeQuery = (queryToExecute: string | undefined) => {
-    if(!queryToExecute) return;
+    if (!queryToExecute) return;
     const startTime = performance.now();
 
     fetch('http://0.0.0.0:18080/query', {
@@ -24,7 +26,11 @@ export default function Home() {
     })
       .then((res) => res.json())
       .then((data) => {
-        setData(data);
+        if (data["message"]) {
+          setNotification(data["message"]);
+        } else {
+          setData(data);
+        }
         const endTime = performance.now();
         setTime(endTime - startTime);
       });
@@ -56,11 +62,21 @@ export default function Home() {
           />
         </section>
 
-        <section className="flex flex-row justify-end gap-3 text-sm rounded-md p-3 border">
-          <button className="border p-2 rounded-sm bg-gray-50 hover:bg-gray-100"
-                  onClick={() => executeQuery(window.getSelection()?.toString())}>Execute Selected</button>
-          <button className="border p-2 rounded-sm bg-gray-50 hover:bg-gray-100"
-                  onClick={() => executeQuery(query)}>Execute Query</button>
+        <section className="flex flex-row gap-3 justify-between text-sm rounded-md p-3 border">
+          <div className='flex align-middle'>
+            {notification && (
+              <Notification
+                message={notification}
+                onClose={() => setNotification(null)}
+              />
+            )}
+          </div>
+          <div className='flex flex-row gap-3'>
+            <button className="border p-2 rounded-sm bg-gray-50 hover:bg-gray-100"
+              onClick={() => executeQuery(window.getSelection()?.toString())}>Execute Selected</button>
+            <button className="border p-2 rounded-sm bg-gray-50 hover:bg-gray-100"
+              onClick={() => executeQuery(query)}>Execute Query</button>
+          </div>
         </section>
 
         <section className="flex flex-col border rounded-md p-3">
