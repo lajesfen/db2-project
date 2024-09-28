@@ -161,6 +161,7 @@ La función `find` está diseñada para la búsqueda de un registro específico 
       return find(pos_root, key);
    }
    ```
+ 
 
    - Recibe un parámetro `key`, que es la clave de registro a buscar.
 
@@ -175,16 +176,18 @@ La función `find` está diseñada para la búsqueda de un registro específico 
       if(pos == -1) {
          return RecordType{};
       }
-   ```cpp
 
-   - Si `pos` es `-1`, significa que la posición está vacío o no se encontró el registro. Devuelve un objeto `RecordType` por defecto.
+
+- Si `pos` es `-1`, significa que la posición está vacío o no se encontró el registro. Devuelve un objeto `RecordType` por defecto.
 
    ```cpp
    auto temp = getRecord(pos);
    ```
-   - Se utiliza la función `getRecord` para obtener el registro de la posición `pos` en el archivo.
 
-   **Comparación de Claves**
+
+- Se utiliza la función `getRecord` para obtener el registro de la posición `pos` en el archivo.
+
+**Comparación de Claves**
 
    ```cpp
    if (key < temp.id) {
@@ -237,6 +240,7 @@ La función `insert` se encarga de insertar un nuevo registro en el árbol AVL. 
          auto temp = getRecord(pos);
       ```
 
+
       - Lee el registro en la posición `pos` desde el archivo y lo almacena en `temp`.
 
    3. Inserción en el Subárbol Izquierdo
@@ -253,6 +257,7 @@ La función `insert` se encarga de insertar un nuevo registro en el árbol AVL. 
       ```
 
       - Si `record.id` es menor que `temp.id`:
+
          1. Si `temp.left == -1`, asigna `temp.left` a la última posición disponible (`getSize()`). Además, se inserta el registro en `temp.left` usando `setRecord()`.
 
          2. Caso contrario, llama a la función `insert(temp.left, record)` recursivamente para intentar insertar el registro en el subárbol izquierdo.
@@ -271,7 +276,9 @@ La función `insert` se encarga de insertar un nuevo registro en el árbol AVL. 
       ```
       
       - De manera similar que en el anterior paso, si `record.id` es mayor que `temp.id`:
+
          1. Si `temp.right == -1`, asigna `temp.right` a la última posición disponible. Además, inserta el registro en `temp.right` utilizando la función `setRecord()`.
+
          2. Caso contrario, llama a la función `insert(temp.right, record)` recursivamente para intentar isnertar el registro en el subárbol derecho.
 
    5. Actualización
@@ -282,6 +289,7 @@ La función `insert` se encarga de insertar un nuevo registro en el árbol AVL. 
       setRecord(pos, temp);
       }
       ```
+
 
       - Se llama a la función `updateHeight()` para actualizar la altura el nodo actual (`temp`) en función de las alturas de sus hijos izquierdos y derechos.
 
@@ -311,6 +319,8 @@ La función `remove` se encarga de eliminar un nodo (registro) con una clave (`k
       ```cpp
       if (pos == -1) return false;
       ```
+
+      
       - Si el `pos` es `-1`, significa que el nodo actual no existe, por lo que no hay nada que eliminar.
 
    2. Obtener el Registro Actual en la Posición `pos`
@@ -339,6 +349,8 @@ La función `remove` se encarga de eliminar un nodo (registro) con una clave (`k
          pos = -1;
       }
       ```
+
+
       - Si se cumple, el nodo no tiene hijos (es un nodo hoja). Simplemente se elimina asignando `pos = -1`.
 
       #### Caso 1b: Nodo con Hijo:
@@ -350,6 +362,8 @@ La función `remove` se encarga de eliminar un nodo (registro) con una clave (`k
          pos = tempPos;
       }
       ```
+
+      
       - Caso contrario, el nodo tiene un solo hijo. Entonces se reemplaza el nodo actual por su hijo (`pos = tempPos`).
 
    4. Caso 2: Nodo con Dos Hijos
@@ -363,8 +377,12 @@ La función `remove` se encarga de eliminar un nodo (registro) con una clave (`k
          remove(record.right, nextNode.id);
       }
       ```
+
+
       - Si el nodo tiene dos hijos, se encuentra un sucesor en el subárbol derecho.
+
       - La clave del sucesor (`nextNode.id`) se usa para reemplazar la clave del nodo que estamos eliminando (`record.id = nextNode.id`).
+
       - Luego, se llama recursivamente a `remove` para eliminar el sucesor del subárbol derecho.
 
    5. Actualizar y Balancear el Árbol
@@ -377,7 +395,9 @@ La función `remove` se encarga de eliminar un nodo (registro) con una clave (`k
       }
       ```
 
+
       - Después de eliminar el nodo, si `pos != -1`, se actualiza la altura del nodo actual y se balancea el subárbol para restaurar las propiedades de balanceo del AVL.
+
       - Finalmente se guarda el nodo actualizado en el archivo con la función `SetRecord()`.
 
 
