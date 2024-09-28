@@ -2,6 +2,7 @@
 #include <string>
 #include <vector>
 #include <algorithm>
+using namespace std;
 
 std::string trim(const std::string& str) {
     size_t first = str.find_first_not_of(' ');

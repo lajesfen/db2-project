@@ -26,8 +26,10 @@ class SQLParser {
     vector<AVLFile<int, SocialRecord>> avlSocial;
     vector<SequentialFile<int, HospitalRecord>> sequentialHospital;
     vector<SequentialFile<int, SocialRecord>> sequentialSocial;
+    vector<ExtendibleHashing<int,SocialRecord>> extendibleSR;
+    vector<ExtendibleHashing<int,HospitalRecord>> extendibleHR;
 public:
-    void parse(const string& query) {
+    void parse(const std::string& query) {
         auto tokens = tokenize(query);
         if (tokens.empty()) {
             cout << "Consulta vacía\n";
@@ -59,13 +61,25 @@ public:
                     std::cout << "Tabla Sequential creada con Registro tipo: " << tipo_dato << std::endl;
                 }
             }
+            else if (tokens[7] == "hash") {
+                if (tipo_dato == "hospitalesopendata") {
+                    ExtendibleHashing<int,HospitalRecord> hashTable(nombre_archivo+".dat");
+                    extendibleHR.push_back(hashTable);
+                    std::cout << "Tabla Hash creada con Registro tipo: " << tipo_dato << std::endl;
+                } else if (tipo_dato == "directorioredes") {
+                    ExtendibleHashing<int,SocialRecord> hashTable(nombre_archivo+".dat");
+                    extendibleSR.push_back(hashTable);
+                    std::cout << "Tabla Hash creada con Registro tipo: " << tipo_dato << std::endl;
+                }
+            }
         }
 
-		// INSERT INTO command
+        // INSERT INTO command
         else if (tokens[0] == "insert" && tokens[1] == "into") {
             string nombre = tokens[2];
             int indexAVL = -1;
             int indexSequential = -1;
+            int indexHash = -1;
 
             // AVLFile handling
             indexAVL = buscarAVLPorNombre(avlHospital, nombre + ".dat");
@@ -88,37 +102,98 @@ public:
                     handleInsertSequential<SocialRecord>(tokens, sequentialSocial[indexSequential]);
                 }
             }
+           // ExtendibleHashing handling
+            indexHash = buscarExtendibleHashing(extendibleHR, nombre+".dat");
+            if (indexHash != -1) {
+              handleInsertHash<HospitalRecord>(tokens, extendibleHR[indexHash]);
+            } else {
+                indexHash = buscarExtendibleHashing(extendibleSR, nombre+".dat");
+                if (indexHash != -1) {handleInsertHash<SocialRecord>(tokens, extendibleSR[indexHash]);
+                }
+            }
 
-            if (indexAVL == -1 && indexSequential == -1) {
+            if (indexAVL == -1 && indexSequential == -1 &&indexHash== -1 ){
                 cout << "Tabla no encontrada para insertar.\n";
             }
         }
 
-
-        //select
+        // SELECT command
         else if (tokens[0] == "select" && tokens[6] == "=") {
             string nombreTabla = tokens[3];
             int key = stoi(tokens[7]);
             int indexAVL = buscarAVLPorNombre(avlHospital, nombreTabla + ".dat");
             int indexSequential = buscarSequentialPorNombre(sequentialHospital, nombreTabla + ".dat");
-
+            int HashIndex=buscarExtendibleHashing(extendibleHR,nombreTabla+".dat");
             if (indexAVL != -1) {
                 HospitalRecord registro = avlHospital[indexAVL].find(key);
                 registro.mostrarDatos();
             } else if (indexSequential != -1) {
-                vector<HospitalRecord> registros = sequentialHospital[indexSequential].search(key);
+                HospitalRecord registros = sequentialHospital[indexSequential].search(key);
+                    registros.mostrarDatos();
+            } else if(HashIndex!=-1) {
+                HospitalRecord registroH=extendibleHR[HashIndex].find(key);
+                registroH.mostrarDatos();
+            }
+
+            else {
+                indexAVL = buscarAVLPorNombre(avlSocial, nombreTabla + ".dat");
+                indexSequential=buscarSequentialPorNombre(sequentialSocial,nombreTabla+".dat");
+                HashIndex=buscarExtendibleHashing(extendibleSR,nombreTabla+".dat");
+                if (indexAVL != -1) {
+                    SocialRecord registro = avlSocial[indexAVL].find(key);
+                    registro.mostrarDatos();
+                } else if(indexSequential!=-1){
+                    indexSequential = buscarSequentialPorNombre(sequentialSocial, nombreTabla + ".dat");
+                    if (indexSequential != -1) {
+                        SocialRecord registros = sequentialSocial[indexSequential].search(key);
+                           registros.mostrarDatos();
+
+                    }
+                }
+                 else if(HashIndex!=-1) {
+                    SocialRecord registroS=extendibleSR[HashIndex].find(key);
+                    registroS.mostrarDatos();
+                }
+            }
+
+            if (indexAVL == -1 && indexSequential == -1 and HashIndex) {
+                cout << "Tabla no encontrada para buscar.\n";
+            }
+        }
+
+        // Range search
+        else if (tokens[0] == "select" && tokens[6] == "between") {
+            string nombreTabla = tokens[3];
+            int keya = stoi(tokens[7]);
+            int keyb = stoi(tokens[9]);
+            int indexAVL = buscarAVLPorNombre(avlHospital, nombreTabla + ".dat");
+            int indexSequential = buscarSequentialPorNombre(sequentialHospital, nombreTabla + ".dat");
+
+            if (indexAVL != -1) {
+                /*vector<HospitalRecord> registros = avlHospital[indexAVL].inorder();
+                for (auto &reg : registros) {
+                    if (reg.id >= keya && reg.id <= keyb) {
+                        reg.mostrarDatos();
+                    }
+                }*/
+            } else if (indexSequential != -1) {
+                vector<HospitalRecord> registros = sequentialHospital[indexSequential].rangeSearch(keya, keyb);
                 for (auto &reg : registros) {
                     reg.mostrarDatos();
                 }
             } else {
                 indexAVL = buscarAVLPorNombre(avlSocial, nombreTabla + ".dat");
                 if (indexAVL != -1) {
-                    SocialRecord registro = avlSocial[indexAVL].find(key);
-                    registro.mostrarDatos();
+                    /*vector<SocialRecord> registros = avlSocial[indexAVL].inorder();
+                    for (auto &reg : registros) {
+                        if (reg.id >= keya && reg.id <= keyb) {
+                            reg.mostrarDatos();
+                        }
+                    }*/
                 } else {
                     indexSequential = buscarSequentialPorNombre(sequentialSocial, nombreTabla + ".dat");
                     if (indexSequential != -1) {
-                        vector<SocialRecord> registros = sequentialSocial[indexSequential].search(key);
+                        vector<SocialRecord> registros = sequentialSocial[indexSequential].rangeSearch(keya, keyb);
                         for (auto &reg : registros) {
                             reg.mostrarDatos();
                         }
@@ -131,14 +206,13 @@ public:
             }
         }
 
-        //delete
-
+        // DELETE command
         else if (tokens[0] == "delete" && tokens[1] == "from" && tokens[5] == "=") {
             string nombreTabla = tokens[2];
             int key = stoi(tokens[6]);
             int indexAVL = buscarAVLPorNombre(avlHospital, nombreTabla + ".dat");
             int indexSequential = buscarSequentialPorNombre(sequentialHospital, nombreTabla + ".dat");
-
+            int HashIndex=buscarExtendibleHashing(extendibleHR,nombreTabla+".dat");
             if (indexAVL != -1) {
                 bool deleted = avlHospital[indexAVL].remove(key);
                 if (deleted) {
@@ -153,8 +227,14 @@ public:
                 } else {
                     cout << "Registro no encontrado para eliminar en " << nombreTabla << ".\n";
                 }
-            } else {
+            } else if (HashIndex != -1) {
+                extendibleHR[HashIndex].remove(key);
+            }
+            else {
                 indexAVL = buscarAVLPorNombre(avlSocial, nombreTabla + ".dat");
+                indexSequential = buscarSequentialPorNombre(sequentialSocial, nombreTabla + ".dat");
+                HashIndex=buscarExtendibleHashing(extendibleSR,nombreTabla+".dat");
+
                 if (indexAVL != -1) {
                     bool deleted = avlSocial[indexAVL].remove(key);
                     if (deleted) {
@@ -162,27 +242,28 @@ public:
                     } else {
                         cout << "Registro no encontrado para eliminar en " << nombreTabla << ".\n";
                     }
-                } else {
-                    indexSequential = buscarSequentialPorNombre(sequentialSocial, nombreTabla + ".dat");
-                    if (indexSequential != -1) {
+                } else if(indexSequential!=-1){
                         bool deleted = sequentialSocial[indexSequential].remove(key);
+                        cout<<key;
                         if (deleted) {
                             cout << "Registro eliminado correctamente de " << nombreTabla << ".\n";
                         } else {
                             cout << "Registro no encontrado para eliminar en " << nombreTabla << ".\n";
                         }
-                    }
+
+                }
+                else if (HashIndex !=-1){
+                    extendibleSR[HashIndex].remove(key);
                 }
             }
 
-            if (indexAVL == -1 && indexSequential == -1) {
+            if (indexAVL == -1 && indexSequential == -1 and HashIndex== -1) {
                 cout << "Tabla no encontrada para eliminar.\n";
             }
         }
     }
 
 private:
-
     template <typename RecordType>
     void handleInsertAVL(vector<string>& tokens, AVLFile<int, RecordType>& avlFile) {
         if (tokens.size() >= 5) {
@@ -206,6 +287,20 @@ private:
                 registro.llenarDatos(vect);
                 cout << "Registro insertado correctamente en SequentialFile.\n";
                 sequentialFile.add(registro);
+            }
+
+        }
+    }
+    template<typename RecordType>
+    void handleInsertHash(vector<string>& tokens, ExtendibleHashing<int,RecordType> hash) {
+        if (tokens.size() >= 5) {
+            vector<vector<string>> contenedor = extraerRegistros(tokens[4]);
+            for ( auto vect : contenedor) {
+                RecordType registro;
+                registro.llenarDatos(vect);
+                hash.insert(registro);
+                cout << "Registro insertado correctamente en Hash.\n";
+
             }
 
         }

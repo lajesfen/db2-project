@@ -42,9 +42,9 @@ public:
         }
 
         auto temp = getRecord(pos);
-        if (key < temp.codigo) {
+        if (key < temp.id) {
             return find(temp.left, key);
-        } else if (key > temp.codigo) {
+        } else if (key > temp.id) {
             return find(temp.right, key);
         } else {
             return temp;
@@ -80,14 +80,14 @@ public:
         } else {
             auto temp = getRecord(pos);
 
-            if (record.codigo < temp.codigo) {
+            if (record.id < temp.id) {
                 if (temp.left == -1) {
                     temp.left = getSize();
                     setRecord(temp.left, record);
                 } else {
                     insert(temp.left, record);
                 }
-            } else if (record.codigo > temp.codigo) {
+            } else if (record.id > temp.id) {
                 if (temp.right == -1) {
                     temp.right = getSize();
                     setRecord(temp.right, record);
@@ -227,8 +227,8 @@ public:
             long nextPos = getMinValueRecord(record.right);
             RecordType nextNode = getRecord(nextPos);
 
-            record.codigo = nextNode.codigo;
-            remove(record.right, nextNode.codigo);
+            record.id = nextNode.id;
+            remove(record.right, nextNode.id);
         }
 
         if(pos != -1) {

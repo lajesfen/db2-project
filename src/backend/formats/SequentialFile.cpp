@@ -35,7 +35,7 @@ public:
 
         while (file.read(reinterpret_cast<char *>(&reg), sizeof(Registro)))
         {
-            if (reg.key == key)
+            if (reg.id == key)
             {
                 file.close();
                 return reg;
@@ -46,7 +46,7 @@ public:
         file.open(aux_filename, std::ios::binary);
         while (file.read(reinterpret_cast<char *>(&reg), sizeof(Registro)))
         {
-            if (reg.key == key)
+            if (reg.id == key)
             {
                 file.close();
                 return reg;
@@ -65,7 +65,7 @@ public:
 
         while (file.read(reinterpret_cast<char *>(&reg), sizeof(Registro)))
         {
-            if (reg.key >= begin_key && reg.key <= end_key)
+            if (reg.id >= begin_key && reg.id <= end_key)
             {
                 results.push_back(reg);
             }
@@ -75,7 +75,7 @@ public:
         file.open(aux_filename, std::ios::binary);
         while (file.read(reinterpret_cast<char *>(&reg), sizeof(Registro)))
         {
-            if (reg.key >= begin_key && reg.key <= end_key)
+            if (reg.id >= begin_key && reg.id <= end_key)
             {
                 results.push_back(reg);
             }
@@ -89,7 +89,7 @@ public:
     {
         try
         {
-            search(registro.key);
+            search(registro.id);
             return;
         }
         catch (const std::runtime_error &)
@@ -116,7 +116,7 @@ public:
 
         while (file.read(reinterpret_cast<char *>(&reg), sizeof(Registro)))
         {
-            if (reg.key != key)
+            if (reg.id != key)
             {
                 registros.push_back(reg);
             }
@@ -174,7 +174,7 @@ public:
         file.close();
 
         std::sort(allRecords.begin(), allRecords.end(), [](const Registro &a, const Registro &b)
-                  { return a.key < b.key; });
+                  { return a.id < b.id; });
 
         std::ofstream outFile(filename, std::ios::binary | std::ios::trunc);
         for (const auto &r : allRecords)
