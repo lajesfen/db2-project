@@ -6,22 +6,32 @@ Comprender y aplicar de manera efectiva las técnicas de organización e indexac
 
 ### Objetivos
 
-1. **Analizar diferentes técnicas de indexación:**
+1. **Analizar y aplicar diferentes técnicas de indexación:**
 
    - Implementar las técnicas AVL File, Sequential File y Extendible Hashing.
    - Comparar el tiempo y eficiencia de consultas con distintas técnicas.
 
-2. **Implementar las operaciones:**
+2. **Implementar de las operaciones de las técnicas de indexación:**
 
    - Búsqueda específica.
    - Búsqueda por rango.
    - Agregación y eliminación de un registro.
 
-3. **Crear una interfaz gráfica:**
+3. **Desarrollar una interfaz gráfica:**
    - Manipulación de la base de datos.
    - Realización de consultas SQL.
+   - Facilitar la visualización de resultados.
 
 ### Resultados Esperados
+
+1. **Mejoramiento en la Eficiencia de las Consultas**: 
+- Las técnicas de indexación deben reducir el tiempo de respuesta.
+
+2. **Optimización en los Tiempos de Procesamiento**
+- El uso de estructura de datos especializadas debe acelerar la recuperación, inserción y eliminación de registros, incluso en bases de datos con volumne de datos considerables.
+
+3. **Capacidad de Procesamiento Eficiente a Gran Escala**
+- Las técnicas de indexación aplicadas deben poder manejar grandes volúmenes de datos de manera eficiente, evitando cuellos de botella y permitiendo un rendimiento constante en situaciones de alta carga o con archivos de gran tamaño.
 
 ### Técnicas de Indexación
 
@@ -35,10 +45,10 @@ Las técnicas implementadas son las siguientes:
 
 Para cada una de las técnicas de indexación se implementaron las siguientes funciones:
 
-- Search
-- Range Search
-- Add
-- Remove
+- `Search`
+- `Range Search`
+- `Add`
+- `Remove`
 
 ### Dataset
 
@@ -100,15 +110,17 @@ La selección del dataset se baso en los siguientes factores:
 
 ### AVL File
 
-#### Search
+**SEARCH**
 
-#### Range Search
+**RANGE SEARCH**
 
-#### Add
+**ADD**
 
-#### Remove
+**REMOVE**
 
 ### Sequential File
+
+Esta técnica de indexación se utiliza principalmente en archivos donde los registros se organizan en un orden lineal y continuo. Cada registro se almacena uno después de otro, de manera que se puede acceder a ellos en la secuencia en la que se escribieron. Este formato es comúnmente utilizado para aplicaciones donde se requiere una acceso secuencial a los datos.
 
 **SEARCH**
 
@@ -405,15 +417,16 @@ La función `remove` está diseñada para la eliminación de un registro en espe
 
 ### Extendible Hashing
 
-#### Search
+**SEARCH**
 
-#### Range Search
+**RANGE SEARCH**
 
-#### Add
+**ADD**
 
-#### Remove
+**REMOVE**
 
 ## Parser SQL
+
 
 ### Comandos SQL Implementados:
 
@@ -485,4 +498,3 @@ Avenida Cultura 1234, (084)567891,ACTIVO,200,20112345678)
 
 ### Cuadro Comparativo de Técnicas de Indexación
 
-Video: [pruebas de experimentación](link)
