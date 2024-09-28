@@ -6,13 +6,11 @@
 #include "contenido.cpp"
 #include "../formats/AVL.cpp"
 #include "../formats/SequentialFile.cpp"
+#include "../formats/ExtendibleHashing.cpp"
 #include "../data/HospitalRecord.h"
 #include "../data/SocialRecord.h"
-#include "../formats/ExtendibleHashing.cpp"
+#include "../loaders/DataLoader.cpp"
 using namespace std;
-
-
-#include "ExtendibleHashing.cpp"
 
 vector<string> tokenize(const string& query) {
     stringstream ss(query);
@@ -70,7 +68,6 @@ public:
     }
 };
 class SQLParser {
-
     MetadataManager metadataManager;
 
     vector<AVLFile<int, HospitalRecord>> avlHospital;
@@ -113,61 +110,110 @@ public:
         }
     }
 
-
-
-    void parse(const std::string& query) {
+    json parse(const std::string& query) {
         auto tokens = tokenize(query);
+        json response;
+
         if (tokens.empty()) {
             cout << "Consulta vacía\n";
-            return;
+            response["message"] = "Consulta vacía.";
+            return response;
         }
 
         // CREATE TABLE command
         if (tokens[0] == "create" && tokens[1] == "table") {
             string nombre_archivo = tokens[2];
             string tipo_dato = tokens[5];
+            auto hospitalData = readHospitalFromCSV();
+            auto redesData = readSocialFromCSV();
+
             if (tokens[7] == "AVL") {
                 if (tipo_dato == "hospitalesopendata") {
                     AVLFile<int, HospitalRecord> avlH(nombre_archivo + ".dat");
                     avlHospital.push_back(avlH);
 
                     metadataManager.saveMetadata(nombre_archivo+".dat","AVL",tipo_dato);
+
+                    for(auto data : hospitalData) {
+                        avlH.insert(data);
+                    }
+
                     std::cout << "Tabla AVL creada con Registro tipo: " << tipo_dato << std::endl;
+                    response["message"] = "Tabla AVL creada con Registro tipo: " + tipo_dato;
+                    return response;
+
                 } else if (tipo_dato == "directorioredes") {
                     AVLFile<int, SocialRecord> avlS(nombre_archivo + ".dat");
                     avlSocial.push_back(avlS);
 
                     metadataManager.saveMetadata(nombre_archivo+".dat","AVL",tipo_dato);
 
+                    for(auto data : redesData) {
+                        avlS.insert(data);
+                    }
+
                     std::cout << "Tabla AVL creada con Registro tipo: " << tipo_dato << std::endl;
+                    response["message"] = "Tabla AVL creada con Registro tipo: " + tipo_dato;
+                    return response;
                 }
             } else if (tokens[7] == "sequential") {
                 if (tipo_dato == "hospitalesopendata") {
                     SequentialFile<int, HospitalRecord> seqH(nombre_archivo + ".dat");
                     sequentialHospital.push_back(seqH);
+
                     metadataManager.saveMetadata(nombre_archivo+".dat","Sequential",tipo_dato);
+
+                    for(auto data : hospitalData) {
+                        seqH.add(data);
+                    }
+
                     std::cout << "Tabla Sequential creada con Registro tipo: " << tipo_dato << std::endl;
+                    response["message"] = "Tabla Sequential creada con Registro tipo: " + tipo_dato;
+                    return response;
+
                 } else if (tipo_dato == "directorioredes") {
                     SequentialFile<int, SocialRecord> seqS(nombre_archivo + ".dat");
                     sequentialSocial.push_back(seqS);
+
                     metadataManager.saveMetadata(nombre_archivo+".dat","Sequential",tipo_dato);
 
+                    for(auto data : redesData) {
+                        seqS.add(data);
+                    }
+
                     std::cout << "Tabla Sequential creada con Registro tipo: " << tipo_dato << std::endl;
+                    response["message"] = "Tabla Sequential creada con Registro tipo: " + tipo_dato;
+                    return response;
                 }
             }
             else if (tokens[7] == "hash") {
                 if (tipo_dato == "hospitalesopendata") {
                     ExtendibleHashing<int,HospitalRecord> hashTable(nombre_archivo+".dat");
                     extendibleHR.push_back(hashTable);
+
                     metadataManager.saveMetadata(nombre_archivo+".dat","Hash",tipo_dato);
 
+                    for(auto data : hospitalData) {
+                        hashTable.insert(data);
+                    }
+
                     std::cout << "Tabla Hash creada con Registro tipo: " << tipo_dato << std::endl;
+                    response["message"] = "Tabla Hash creada con Registro tipo: " + tipo_dato;
+                    return response;
+
                 } else if (tipo_dato == "directorioredes") {
                     ExtendibleHashing<int,SocialRecord> hashTable(nombre_archivo+".dat");
                     extendibleSR.push_back(hashTable);
+
                     metadataManager.saveMetadata(nombre_archivo+".dat","Hash",tipo_dato);
 
+                    for(auto data : redesData) {
+                        hashTable.insert(data);
+                    }
+
                     std::cout << "Tabla Hash creada con Registro tipo: " << tipo_dato << std::endl;
+                    response["message"] = "Tabla Hash creada con Registro tipo: " + tipo_dato;
+                    return response;
                 }
             }
         }
@@ -182,36 +228,39 @@ public:
             // AVLFile handling
             indexAVL = buscarAVLPorNombre(avlHospital, nombre + ".dat");
             if (indexAVL != -1) {
-                handleInsertAVL<HospitalRecord>(tokens, avlHospital[indexAVL]);
+                return handleInsertAVL<HospitalRecord>(tokens, avlHospital[indexAVL]);
             } else {
                 indexAVL = buscarAVLPorNombre(avlSocial, nombre + ".dat");
                 if (indexAVL != -1) {
-                    handleInsertAVL<SocialRecord>(tokens, avlSocial[indexAVL]);
+                    return handleInsertAVL<SocialRecord>(tokens, avlSocial[indexAVL]);
                 }
             }
 
             // SequentialFile handling
             indexSequential = buscarSequentialPorNombre(sequentialHospital, nombre + ".dat");
             if (indexSequential != -1) {
-                handleInsertSequential<HospitalRecord>(tokens, sequentialHospital[indexSequential]);
+                return handleInsertSequential<HospitalRecord>(tokens, sequentialHospital[indexSequential]);
             } else {
                 indexSequential = buscarSequentialPorNombre(sequentialSocial, nombre + ".dat");
                 if (indexSequential != -1) {
-                    handleInsertSequential<SocialRecord>(tokens, sequentialSocial[indexSequential]);
+                    return handleInsertSequential<SocialRecord>(tokens, sequentialSocial[indexSequential]);
                 }
             }
            // ExtendibleHashing handling
             indexHash = buscarExtendibleHashing(extendibleHR, nombre+".dat");
             if (indexHash != -1) {
-              handleInsertHash<HospitalRecord>(tokens, extendibleHR[indexHash]);
+                return handleInsertHash<HospitalRecord>(tokens, extendibleHR[indexHash]);
             } else {
                 indexHash = buscarExtendibleHashing(extendibleSR, nombre+".dat");
-                if (indexHash != -1) {handleInsertHash<SocialRecord>(tokens, extendibleSR[indexHash]);
+                if (indexHash != -1) {
+                    return handleInsertHash<SocialRecord>(tokens, extendibleSR[indexHash]);
                 }
             }
 
             if (indexAVL == -1 && indexSequential == -1 &&indexHash== -1 ){
                 cout << "Tabla no encontrada para insertar.\n";
+                response["message"] = "Tabla no encontrada para insertar.";
+                return response;
             }
         }
 
@@ -224,13 +273,16 @@ public:
             int HashIndex=buscarExtendibleHashing(extendibleHR,nombreTabla+".dat");
             if (indexAVL != -1) {
                 HospitalRecord registro = avlHospital[indexAVL].find(key);
-                registro.mostrarDatos();
+                response.push_back(registro.toJSON());
+                return response;
             } else if (indexSequential != -1) {
                 HospitalRecord registros = sequentialHospital[indexSequential].search(key);
-                    registros.mostrarDatos();
+                response.push_back(registros.toJSON());
+                return response;
             } else if(HashIndex!=-1) {
                 HospitalRecord registroH=extendibleHR[HashIndex].find(key);
-                registroH.mostrarDatos();
+                response.push_back(registroH.toJSON());
+                return response;
             }
 
             else {
@@ -239,23 +291,27 @@ public:
                 HashIndex=buscarExtendibleHashing(extendibleSR,nombreTabla+".dat");
                 if (indexAVL != -1) {
                     SocialRecord registro = avlSocial[indexAVL].find(key);
-                    registro.mostrarDatos();
-                } else if(indexSequential!=-1){
+                    response.push_back(registro.toJSON());
+                    return response;
+                } else if(indexSequential!=-1) {
                     indexSequential = buscarSequentialPorNombre(sequentialSocial, nombreTabla + ".dat");
                     if (indexSequential != -1) {
                         SocialRecord registros = sequentialSocial[indexSequential].search(key);
-                           registros.mostrarDatos();
-
+                        response.push_back(registros.toJSON());
+                        return response;
                     }
                 }
                  else if(HashIndex!=-1) {
                     SocialRecord registroS=extendibleSR[HashIndex].find(key);
-                    registroS.mostrarDatos();
+                    response.push_back(registroS.toJSON());
+                    return response;
                 }
             }
 
             if (indexAVL == -1 && indexSequential == -1 and HashIndex) {
                 cout << "Tabla no encontrada para buscar.\n";
+                response["message"] = "Tabla no encontrada para buscar.";
+                return response;
             }
         }
 
@@ -267,34 +323,39 @@ public:
             int HashIndex = buscarExtendibleHashing(extendibleHR, nombreTabla + ".dat");
             int indexSequential = buscarSequentialPorNombre(sequentialHospital, nombreTabla + ".dat");
 
+            if (HashIndex == -1 && indexSequential == -1) {
+                cout << "Tabla no encontrada para buscar.\n";
+                response["message"] = "Tabla no encontrada para buscar.";
+                return response;
+            }
+
             if (HashIndex != -1) {
-                vector<HospitalRecord> results=extendibleHR[HashIndex].findRange(keya,keyb);
+                vector<HospitalRecord> results = extendibleHR[HashIndex].findRange(keya,keyb);
                 for(auto a:results)
-                    a.mostrarDatos();
+                    response.push_back(a.toJSON());
+                return response;
             } else if (indexSequential != -1) {
                 vector<HospitalRecord> registros = sequentialHospital[indexSequential].rangeSearch(keya, keyb);
                 for (auto &reg : registros) {
-                    reg.mostrarDatos();
+                    response.push_back(reg.toJSON());
                 }
+                return response;
             } else {
                 HashIndex = buscarExtendibleHashing(extendibleSR, nombreTabla + ".dat");
                 if (HashIndex != -1) {
                     vector<SocialRecord> results=extendibleSR[HashIndex].findRange(keya,keyb);
                     for(auto a:results)
-                        a.mostrarDatos();
+                        response.push_back(a.toJSON());
                 } else {
                     indexSequential = buscarSequentialPorNombre(sequentialSocial, nombreTabla + ".dat");
                     if (indexSequential != -1) {
                         vector<SocialRecord> registros = sequentialSocial[indexSequential].rangeSearch(keya, keyb);
                         for (auto &reg : registros) {
-                            reg.mostrarDatos();
+                            response.push_back(reg.toJSON());
                         }
                     }
                 }
-            }
-
-            if (HashIndex == -1 && indexSequential == -1) {
-                cout << "Tabla no encontrada para buscar.\n";
+                return response;
             }
         }
 
@@ -309,15 +370,23 @@ public:
                 bool deleted = avlHospital[indexAVL].remove(key);
                 if (deleted) {
                     cout << "Registro eliminado correctamente de " << nombreTabla << ".\n";
+                    response["message"] = "Registro eliminado correctamente de " + nombreTabla;
+                    return response;
                 } else {
                     cout << "Registro no encontrado para eliminar en " << nombreTabla << ".\n";
+                    response["message"] = "Registro no encontrado para eliminar en " + nombreTabla;
+                    return response;
                 }
             } else if (indexSequential != -1) {
                 bool deleted = sequentialHospital[indexSequential].remove(key);
                 if (deleted) {
                     cout << "Registro eliminado correctamente de " << nombreTabla << ".\n";
+                    response["message"] = "Registro eliminado correctamente de " + nombreTabla;
+                    return response;
                 } else {
                     cout << "Registro no encontrado para eliminar en " << nombreTabla << ".\n";
+                    response["message"] = "Registro no encontrado para eliminar en " + nombreTabla;
+                    return response;
                 }
             } else if (HashIndex != -1) {
                 extendibleHR[HashIndex].remove(key);
@@ -331,16 +400,24 @@ public:
                     bool deleted = avlSocial[indexAVL].remove(key);
                     if (deleted) {
                         cout << "Registro eliminado correctamente de " << nombreTabla << ".\n";
+                        response["message"] = "Registro eliminado correctamente de " + nombreTabla;
+                        return response;
                     } else {
                         cout << "Registro no encontrado para eliminar en " << nombreTabla << ".\n";
+                        response["message"] = "Registro no encontrado para eliminar en " + nombreTabla;
+                        return response;
                     }
                 } else if(indexSequential!=-1){
                         bool deleted = sequentialSocial[indexSequential].remove(key);
                         cout<<key;
                         if (deleted) {
                             cout << "Registro eliminado correctamente de " << nombreTabla << ".\n";
+                            response["message"] = "Registro eliminado correctamente de " + nombreTabla;
+                            return response;
                         } else {
                             cout << "Registro no encontrado para eliminar en " << nombreTabla << ".\n";
+                            response["message"] = "Registro no encontrado para eliminar en " + nombreTabla;
+                            return response;
                         }
 
                 }
@@ -351,51 +428,77 @@ public:
 
             if (indexAVL == -1 && indexSequential == -1 and HashIndex== -1) {
                 cout << "Tabla no encontrada para eliminar.\n";
+                response["message"] = "Tabla no encontrada para eliminar.";
+                return response;
             }
         }
+
+        response["message"] = "Query indefinida.";
+        return response;
     }
 
 private:
     template <typename RecordType>
-    void handleInsertAVL(vector<string>& tokens, AVLFile<int, RecordType>& avlFile) {
+    json handleInsertAVL(vector<string>& tokens, AVLFile<int, RecordType>& avlFile) {
+        json response;
+
         if (tokens.size() >= 5) {
             vector<vector<string>> contenedor = extraerRegistros(tokens[4]);
             for (const auto& vect : contenedor) {
                 RecordType registro;
                 registro.llenarDatos(vect);
-                cout << "Registro insertado correctamente en AVL.\n";
                 avlFile.insert(registro);
-            }
 
+                cout << "Registro insertado correctamente en AVL.\n";
+                response["message"] = "Registro insertado correctamente en AVL.";
+                return response;
+            }
         }
+
+        response["message"] = "Error insertando.";
+        return response;
     }
 
     template <typename RecordType>
-    void handleInsertSequential(vector<string>& tokens, SequentialFile<int, RecordType>& sequentialFile) {
+    json handleInsertSequential(vector<string>& tokens, SequentialFile<int, RecordType>& sequentialFile) {
+        json response;
+
         if (tokens.size() >= 5) {
             vector<vector<string>> contenedor = extraerRegistros(tokens[4]);
             for (const auto& vect : contenedor) {
                 RecordType registro;
                 registro.llenarDatos(vect);
-                cout << "Registro insertado correctamente en SequentialFile.\n";
                 sequentialFile.add(registro);
-            }
 
+                cout << "Registro insertado correctamente en SequentialFile.\n";
+                response["message"] = "Registro insertado correctamente en SequentialFile.";
+                return response;
+            }
         }
+
+        response["message"] = "Error insertando.";
+        return response;
     }
+
     template<typename RecordType>
-    void handleInsertHash(vector<string>& tokens, ExtendibleHashing<int,RecordType> hash) {
+    json handleInsertHash(vector<string>& tokens, ExtendibleHashing<int,RecordType> hash) {
+        json response;
+
         if (tokens.size() >= 5) {
             vector<vector<string>> contenedor = extraerRegistros(tokens[4]);
             for ( auto vect : contenedor) {
                 RecordType registro;
                 registro.llenarDatos(vect);
                 hash.insert(registro);
-                cout << "Registro insertado correctamente en Hash.\n";
 
+                cout << "Registro insertado correctamente en HashTable.\n";
+                response["message"] = "Registro insertado correctamente en HashTable.";
+                return response;
             }
-
         }
+
+        response["message"] = "Error insertando.";
+        return response;
     }
 };
 
@@ -418,5 +521,4 @@ void prueba() {
     string frase4;
     getline(std::cin, frase4);
     parse.parse(frase4);*/
-
 }

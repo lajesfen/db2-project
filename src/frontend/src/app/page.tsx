@@ -28,7 +28,9 @@ export default function Home() {
       .then((data) => {
         if (data["message"]) {
           setNotification(data["message"]);
+          setData([]);
         } else {
+          console.log(data);
           setData(data);
         }
         const endTime = performance.now();

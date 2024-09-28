@@ -6,7 +6,7 @@ interface NotificationProps {
   onClose: () => void;
 }
 
-export default function Notification({ message, duration = 3000, onClose }: NotificationProps) {
+export default function Notification({ message, duration = 5000, onClose }: NotificationProps) {
   useEffect(() => {
     const timer = setTimeout(() => {
       onClose();
