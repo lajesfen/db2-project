@@ -139,7 +139,7 @@ La función `search` está diseñada para realizar la búsqueda exacta de un reg
 
    2. Lectura de Archivo Principal
 
-   - Este bucle se ejecuta mientras se pueda leer un registro completo del archivo.
+      - Este bucle se ejecuta mientras se pueda leer un registro completo del archivo.
 
       ```cpp
       while (file.read(reinterpret_cast<char *>(&reg), sizeof(Registro)))
@@ -147,7 +147,7 @@ La función `search` está diseñada para realizar la búsqueda exacta de un reg
 
    3. Comparación de claves en el Archivo Principal
 
-   - Dentro del bucle, se compara la clave del registro leído (`reg.key`) con la clave buscada (`key`). Si se encuentra una coincidencia, se cierra el archivo y devuelve el registro encontrado.
+      - Dentro del bucle, se compara la clave del registro leído (`reg.key`) con la clave buscada (`key`). Si se encuentra una coincidencia, se cierra el archivo y devuelve el registro encontrado.
 
       ```cpp
       if (reg.key == key)
@@ -159,13 +159,13 @@ La función `search` está diseñada para realizar la búsqueda exacta de un reg
 
    4. Búsqueda y Lectura en Archivo Auxiliar
 
-   - Si el registro no se encontró en el archivo principal, se abre el archivo auxiliar.
+      - Si el registro no se encontró en el archivo principal, se abre el archivo auxiliar.
 
       ```cpp
       file.open(aux_filename, std::ios::binary);
       ```
 
-   - Al igual que con el archivo principal, se intenta leer registros del archivo auxiliar en un bucle.
+      - Al igual que con el archivo principal, se intenta leer registros del archivo auxiliar en un bucle.
 
       ```cpp
       while (file.read(reinterpret_cast<char *>(&reg), sizeof(Registro)))
@@ -173,7 +173,7 @@ La función `search` está diseñada para realizar la búsqueda exacta de un reg
 
    6. Comparación de Claves en el Archivo Auxiliar
 
-   - Se compara nuevamente la clave del registro leído con la clave buscada. Si se encuentra una coincidencia se cierra el archivo auxiliar y retorna el registro encontrado.
+      - Se compara nuevamente la clave del registro leído con la clave buscada. Si se encuentra una coincidencia se cierra el archivo auxiliar y retorna el registro encontrado.
 
       ```cpp
       if (reg.key == key)
