@@ -4,8 +4,8 @@
 #include <vector>
 #include <cmath>
 
-#define MAX_DEPTH 3   // Profundidad máxima del directorio
-#define MAX_FILL 4    // Capacidad máxima de cada bucket
+#define MAX_DEPTH 6   // Profundidad máxima del directorio
+#define MAX_FILL 10    // Capacidad máxima de cada bucket
 
 using namespace std;
 
