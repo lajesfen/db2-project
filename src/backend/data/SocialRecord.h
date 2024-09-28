@@ -25,6 +25,42 @@ struct SocialRecord {
     // Atributos Sequential File
     bool deleted = false;
 
+    void llenarDatos(std::vector<std::string> datos) {
+        id = std::stoi(datos[0]);
+
+        strncpy(nombre, datos[1].c_str(), sizeof(nombre) - 1);
+        nombre[sizeof(nombre) - 1] = '\0';
+
+        strncpy(abreviatura, datos[2].c_str(), sizeof(abreviatura) - 1);
+        abreviatura[sizeof(abreviatura) - 1] = '\0';
+
+        strncpy(url, datos[3].c_str(), sizeof(url) - 1);
+        url[sizeof(url) - 1] = '\0';
+
+        strncpy(facebook, datos[4].c_str(), sizeof(facebook) - 1);
+        facebook[sizeof(facebook) - 1] = '\0';
+
+        strncpy(twitter, datos[5].c_str(), sizeof(twitter) - 1);
+        twitter[sizeof(twitter) - 1] = '\0';
+
+        strncpy(instagram, datos[6].c_str(), sizeof(instagram) - 1);
+        instagram[sizeof(instagram) - 1] = '\0';
+
+        strncpy(linkedin, datos[7].c_str(), sizeof(linkedin) - 1);
+        linkedin[sizeof(linkedin) - 1] = '\0';
+
+        strncpy(youtube, datos[8].c_str(), sizeof(youtube) - 1);
+        youtube[sizeof(youtube) - 1] = '\0';
+
+        strncpy(tiktok, datos[9].c_str(), sizeof(tiktok) - 1);
+        tiktok[sizeof(tiktok) - 1] = '\0';
+    }
+
+
+    void mostrarDatos() {
+        std::cout << "ID: " << id << ", Nombre: " << nombre <<  std::endl;
+    }
+
     auto toJSON() {
         json res;
         res["id"] = id;
