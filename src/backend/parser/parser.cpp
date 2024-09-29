@@ -2,7 +2,6 @@
 #include <fstream>
 #include <sstream>
 #include <vector>
-#include <cstring>
 #include "contenido.cpp"
 #include "../formats/AVL.cpp"
 #include "../formats/SequentialFile.cpp"
@@ -338,16 +337,25 @@ public:
             string nombreTabla = tokens[3];
             int keya = stoi(tokens[7]);
             int keyb = stoi(tokens[9]);
+            int indexAVL=buscarAVLPorNombre(avlHospital,nombreTabla+".dat");
             int HashIndex = buscarExtendibleHashing(extendibleHR, nombreTabla + ".dat");
             int indexSequential = buscarSequentialPorNombre(sequentialHospital, nombreTabla + ".dat");
 
-            if (HashIndex == -1 && indexSequential == -1) {
-                cout << "Tabla no encontrada para buscar.\n";
-                response["message"] = "Tabla no encontrada para buscar.";
-                return response;
-            }
+            if (indexAVL != -1) {
+                vector<HospitalRecord> results = avlHospital[indexAVL].searchByRange(keya,keyb);
+                for(auto &a:results) {
+                    if(a.id != -1)
+                        response.push_back(a.toJSON());
+                }
 
-            if (HashIndex != -1) {
+                if(!response.empty()) {
+                    return response;
+                } else {
+                    response["message"] = "No se encontraron datos para esa consulta.";
+                    return response;
+                }
+            }
+             else if (HashIndex != -1) {
                 vector<HospitalRecord> results = extendibleHR[HashIndex].findRange(keya,keyb);
                 for(auto &a:results) {
                     if(a.id != -1)
@@ -375,7 +383,22 @@ public:
                 }
             } else {
                 HashIndex = buscarExtendibleHashing(extendibleSR, nombreTabla + ".dat");
+                indexAVL=buscarAVLPorNombre(avlSocial,nombreTabla+".dat");
+
                 if (HashIndex != -1) {
+                    vector<SocialRecord> results = avlSocial[indexAVL].searchByRange(keya,keyb);
+                    for(auto &a:results) {
+                        if(a.id != -1)
+                            response.push_back(a.toJSON());
+                    }
+
+                    if(!response.empty()) {
+                        return response;
+                    } else {
+                        response["message"] = "No se encontraron datos para esa consulta.";
+                        return response;
+                    }
+                } else if (HashIndex != -1) {
                     vector<SocialRecord> results=extendibleSR[HashIndex].findRange(keya,keyb);
                     for(auto &a:results) {
                         if(a.id != -1)
@@ -407,6 +430,12 @@ public:
                 }
 
                 response["message"] = "No se encontraron datos para esa consulta.";
+                return response;
+            }
+
+            if (HashIndex == -1 && indexSequential == -1) {
+                cout << "Tabla no encontrada para buscar.\n";
+                response["message"] = "Tabla no encontrada para buscar.";
                 return response;
             }
         }
@@ -500,7 +529,16 @@ public:
                     return response;
                 }
             } else if (HashIndex != -1) {
-                extendibleHR[HashIndex].remove(key);
+                bool deleted = extendibleHR[HashIndex].remove(key);
+                if (deleted) {
+                    cout << "Registro eliminado correctamente de " << nombreTabla << ".\n";
+                    response["message"] = "Registro eliminado correctamente de " + nombreTabla;
+                    return response;
+                } else {
+                    cout << "Registro no encontrado para eliminar en " << nombreTabla << ".\n";
+                    response["message"] = "Registro no encontrado para eliminar en " + nombreTabla;
+                    return response;
+                }
             }
             else {
                 indexAVL = buscarAVLPorNombre(avlSocial, nombreTabla + ".dat");
@@ -530,10 +568,18 @@ public:
                             response["message"] = "Registro no encontrado para eliminar en " + nombreTabla;
                             return response;
                         }
-
                 }
                 else if (HashIndex !=-1){
-                    extendibleSR[HashIndex].remove(key);
+                    bool deleted = extendibleSR[HashIndex].remove(key);
+                    if (deleted) {
+                        cout << "Registro eliminado correctamente de " << nombreTabla << ".\n";
+                        response["message"] = "Registro eliminado correctamente de " + nombreTabla;
+                        return response;
+                    } else {
+                        cout << "Registro no encontrado para eliminar en " << nombreTabla << ".\n";
+                        response["message"] = "Registro no encontrado para eliminar en " + nombreTabla;
+                        return response;
+                    }
                 }
             }
 

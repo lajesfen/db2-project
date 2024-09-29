@@ -26,6 +26,23 @@ public:
         {
             this->aux_filename = aux_filename;
         }
+
+        std::fstream file(this->filename, std::ios::in | std::ios::out | std::ios::binary);
+        if (!file.is_open())
+        {
+            file.open(this->filename, std::ios::out | std::ios::binary);
+            file.close();
+        }
+
+        std::fstream auxFile(this->aux_filename, std::ios::in | std::ios::out | std::ios::binary);
+        if (!auxFile.is_open())
+        {
+            auxFile.open(this->aux_filename, std::ios::out | std::ios::binary);
+            auxFile.close();
+        }
+
+        file.close();
+        auxFile.close();
     }
 
     Registro search(TK key)
@@ -125,7 +142,7 @@ public:
         file.close();
 
         std::sort(allRecords.begin(), allRecords.end(), [](const Registro &a, const Registro &b)
-                  { return a.id < b.id; });
+                          { return a.id < b.id; });
 
         return allRecords;
     }
@@ -198,7 +215,7 @@ public:
         file.close();
 
         std::sort(allRecords.begin(), allRecords.end(), [](const Registro &a, const Registro &b)
-                  { return a.id < b.id; });
+        { return a.id < b.id; });
 
         std::ofstream outFile(filename, std::ios::binary | std::ios::trunc);
         for (const auto &r : allRecords)

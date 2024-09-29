@@ -23,6 +23,13 @@ public:
         indexFilename = "indx_" + filename;
         dataFilename = filename;
 
+        std::fstream file(filename, std::ios::in | std::ios::out | std::ios::binary);
+        if (!file.is_open())
+        {
+            file.open(filename, std::ios::out | std::ios::binary);
+            file.close();
+        }
+
         // Crear el archivo de índice
         ofstream outFile(indexFilename, ios::binary | ios::trunc);
         if (outFile)
@@ -34,11 +41,6 @@ public:
                 outFile.write(reinterpret_cast<const char *>(&bucketIndex), sizeof(bucketIndex));
             }
             outFile.close();
-            cout << "Index guardado en " << indexFilename << "." << endl;
-        }
-        else
-        {
-            cout << "Error al abrir " << indexFilename << "." << endl;
         }
     }
 
@@ -55,7 +57,7 @@ public:
         int bucketIndex = getBucketIndex(hashValue);
 
         // Si no existe el registro, lo insertamos
-        if (!find(record.id).id)
+        if (find(record.id).id == -1)
         {
             ofstream dataFile(dataFilename, ios::binary | ios::app);
             if (dataFile)
@@ -97,13 +99,13 @@ public:
             cout << "Error al abrir " << dataFilename << " para leer." << endl;
         }
 
-        RecordType failRecord;
-        failRecord.id = -1;
-        return failRecord;
+        RecordType notFoundRec;
+        notFoundRec.id = -1;
+        return notFoundRec;
     }
 
     // Función para eliminar un registro
-    void remove(TK codigo)
+    bool remove(TK codigo)
     {
         fstream dataFile(dataFilename, ios::binary | ios::in | ios::out);
         if (dataFile)
@@ -120,11 +122,12 @@ public:
                     dataFile.write(reinterpret_cast<const char *>(&emptyRecord), sizeof(RecordType));
                     cout << "Registro con código " << codigo << " eliminado." << endl;
                     dataFile.close();
-                    return;
+                    return true;
                 }
             }
             cout << "Registro con código " << codigo << " no encontrado." << endl;
             dataFile.close();
+            return false;
         }
         else
         {

@@ -285,34 +285,46 @@ public:
 
     bool remove(long &pos, TK key)
     {
-        std::fstream file(filename, std::ios::binary | std::ios::in | std::ios::out);
-
         if (pos == -1)
             return false;
-        RecordType record = find(key);
 
-        if (record.left == -1 | record.right == -1)
+        RecordType record = getRecord(pos);
+
+        if (key < record.id)
         {
-            long tempPos = (record.left != -1) ? record.left : record.right;
-
-            if (tempPos == -1)
-            {
-                pos = -1;
-            }
-            else
-            {
-                RecordType temp = getRecord(pos);
-                record = temp;
-                pos = tempPos;
-            }
+            if (!remove(record.left, key))
+                return false;
+        }
+        else if (key > record.id)
+        {
+            if (!remove(record.right, key))
+                return false;
         }
         else
         {
-            long nextPos = getMinValueRecord(record.right);
-            RecordType nextNode = getRecord(nextPos);
+            if (record.left == -1 || record.right == -1)
+            {
+                long tempPos = (record.left != -1) ? record.left : record.right;
 
-            record.id = nextNode.id;
-            remove(record.right, nextNode.id);
+                if (tempPos == -1)
+                {
+                    pos = -1;
+                }
+                else
+                {
+                    pos = tempPos;
+                }
+            }
+            else
+            {
+                long nextPos = getMinValueRecord(record.right);
+                RecordType nextNode = getRecord(nextPos);
+
+                record.id = nextNode.id;
+
+                if (!remove(record.right, nextNode.id))
+                    return false;
+            }
         }
 
         if (pos != -1)
