@@ -40,6 +40,10 @@ export default function Home() {
         }
         const endTime = performance.now();
         setTime(endTime - startTime);
+      })
+      .catch((error) => {
+        console.error('Error:', error);
+        setNotification(error.message);
       });
   };
 
