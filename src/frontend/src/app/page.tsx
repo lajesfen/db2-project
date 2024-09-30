@@ -14,10 +14,14 @@ export default function Home() {
   const [notification, setNotification] = useState<string | null>(null);
 
   const executeQuery = (queryToExecute: string | undefined) => {
-    if (!queryToExecute) return;
+    if (!queryToExecute) {
+      console.log("Query is empty.")
+      return;
+    }
     setData([]);
     const startTime = performance.now();
 
+    console.log("Executing Query: ", queryToExecute);
     fetch('http://0.0.0.0:18080/query', {
       method: 'POST',
       headers: {

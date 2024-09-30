@@ -13,5 +13,9 @@ int main() {
         return crow::response(res.dump(-1, ' ', false, json::error_handler_t::ignore));
     });
 
+    CROW_ROUTE(app, "/ping").methods(crow::HTTPMethod::GET)([]() {
+        return crow::response("Pong");
+    });
+
     app.port(18080).multithreaded().run();
 }
