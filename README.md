@@ -1292,7 +1292,7 @@ if (tokens[0] == "create" && tokens[1] == "table") {
 
 ### Cuadro Comparativo de Técnicas de Indexación
 ![image](https://github.com/user-attachments/assets/ba2bcf5c-39c4-434b-a843-23980fe0c843)
-![image](https://github.com/user-attachments/assets/7ea63ed5-67ad-4d42-8916-9cf66be81a88)
+![image](https://github.com/user-attachments/assets/0b859e9b-7cd5-47e1-802b-db0034727d5b)
 ![image](https://github.com/user-attachments/assets/928998a7-52a3-48f6-80f6-5d68c94e4201)
 ![image](https://github.com/user-attachments/assets/28871046-dbc6-49d8-b6cd-932f4246d65a)
 ![image](https://github.com/user-attachments/assets/30944026-79fc-4c59-bca5-5be4c762039e)
