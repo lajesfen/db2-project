@@ -81,6 +81,10 @@ public:
         const auto& metadata = metadataManager.getMetadata();
 
         for (const auto& entry : metadata) {
+            std::cout << "Cargando archivo: " << entry.fileName << " para el tipo: " << entry.fileType << " y record: " << entry.recordType << std::endl;
+        }
+
+        for (const auto& entry : metadata) {
             if (entry.fileType == "AVL") {
                 if (entry.recordType == "hospitalesopendata") {
                     AVLFile<int, HospitalRecord> avl(entry.fileName);
@@ -446,7 +450,6 @@ public:
             int indexAVL = buscarAVLPorNombre(avlHospital, nombreTabla + ".dat");
             int indexSequential = buscarSequentialPorNombre(sequentialHospital, nombreTabla + ".dat");
             int HashIndex=buscarExtendibleHashing(extendibleHR,nombreTabla+".dat");
-
             if (indexAVL != -1) {
                 auto registros = avlHospital[indexAVL].inorder();
                 for(auto registro : registros) {
@@ -558,7 +561,7 @@ public:
                     }
                 } else if(indexSequential!=-1){
                         bool deleted = sequentialSocial[indexSequential].remove(key);
-                        cout<<key;
+                        //cout<<key;
                         if (deleted) {
                             cout << "Registro eliminado correctamente de " << nombreTabla << ".\n";
                             response["message"] = "Registro eliminado correctamente de " + nombreTabla;
@@ -599,20 +602,19 @@ private:
     json handleInsertAVL(const string &query, AVLFile<int, RecordType>& avlFile) {
         vector<vector<string>> contenedor = extraerRegistros(query);
         json response;
-
         if (!contenedor.empty()) {
             for (const auto& vect : contenedor) {
                 RecordType registro;
                 registro.llenarDatos(vect);
                 avlFile.insert(registro);
 
-                cout << "Registro insertado correctamente en AVL.\n";
-                response["message"] = "Registro insertado correctamente en AVL.";
-                return response;
+                cout << "Registro insertado correctamente en AVLFile.\n";
             }
+            response["message"] = "Todos los registros fueron insertados correctamente en AVLFile.";
+        } else {
+            response["message"] = "Error insertando.";
         }
 
-        response["message"] = "Error insertando.";
         return response;
     }
 
@@ -628,12 +630,12 @@ private:
                 sequentialFile.add(registro);
 
                 cout << "Registro insertado correctamente en SequentialFile.\n";
-                response["message"] = "Registro insertado correctamente en SequentialFile.";
-                return response;
             }
+            response["message"] = "Todos los registros fueron insertados correctamente en SequentialFile.";
+        } else {
+            response["message"] = "Error insertando.";
         }
 
-        response["message"] = "Error insertando.";
         return response;
     }
 
@@ -643,18 +645,18 @@ private:
         json response;
 
         if (!contenedor.empty()) {
-            for ( auto vect : contenedor) {
+            for (const auto& vect : contenedor) {
                 RecordType registro;
                 registro.llenarDatos(vect);
                 hash.insert(registro);
 
                 cout << "Registro insertado correctamente en HashTable.\n";
-                response["message"] = "Registro insertado correctamente en HashTable.";
-                return response;
             }
+            response["message"] = "Todos los registros fueron insertados correctamente en HashTable.";
+        } else {
+            response["message"] = "Error insertando.";
         }
 
-        response["message"] = "Error insertando.";
         return response;
     }
 };
