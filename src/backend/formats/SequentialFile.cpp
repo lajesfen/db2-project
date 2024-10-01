@@ -257,4 +257,22 @@ public:
         }
         file.close();
     }
+
+    std::vector<Registro> getAllRecords()
+    {
+        std::vector<Registro> allRecords;
+        readAllRecords(filename, allRecords);
+        readAllRecords(aux_filename, allRecords);
+
+        allRecords.erase(std::remove_if(allRecords.begin(), allRecords.end(),
+                                        [](const Registro &r)
+                                        { return r.deleted; }),
+                         allRecords.end());
+
+        std::sort(allRecords.begin(), allRecords.end(), [](const Registro &a, const Registro &b)
+                  { return a.id < b.id; });
+
+        return allRecords;
+    }
+    >
 };
