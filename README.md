@@ -405,7 +405,8 @@ La función `remove` se encarga de eliminar un nodo (registro) con una clave (`k
    1. Verificar si el Árbol está Vacío
 
       ```cpp
-      if (pos == -1) return false;
+      if (pos == -1) 
+         return false;
       ```
 
       
@@ -414,64 +415,79 @@ La función `remove` se encarga de eliminar un nodo (registro) con una clave (`k
    2. Obtener el Registro Actual en la Posición `pos`
 
       ```cpp
-      RecordType record = find(key);
+      RecordType record = getRecord(pos);
       ```
 
-      - Utiliza la función `find` para obtener el registro (nodo) con la clave `key` que deseamos eliminar. Si `find` no encuentra el registro, la ejecución no debería de ocurrir.
+      - Utiliza la función `getRecord` para obtener el registro que se encuentra en la posición `pos`.
+
+   3. Decicidir el Camino de Búsqueda
+   
+   ```
+   if (key < record.id)
+   {
+      if (!remove(record.left, key))
+         return false;
+   }
+   else if (key > record.id)
+   {
+      if (!remove(record.right, key))
+         return false;
+   }
+   else
+   {
+   ```
+
+   - Si `key < record.id`: Se realiza unan llamada recursiva para buscar y eliminar el registro en el subárbol izquierdo.
+
+   - Si `key > record.id`: Se realiza una llamada recursiva para buscar y eliminar el registro en el subárbol derecho.
+
+   - Caso contrario, se procede con la lógica de eliminación 
 
    3. Caso 1: Nodo con Cero o Un Hijo
 
       ```cpp
-      if(record.left == -1 | record.right == -1) {
-                  long tempPos = (record.left != -1) ? record.left : record.right;
-      ```
+      if (record.left == -1 || record.right == -1)
+      {
+        long tempPos = (record.left != -1) ? record.left : record.right;
 
-      - Si el nodo tiene 0 o un solo hijo, se almacena la posición de ese hijo en `tempPos`
-
-      - La condición en `tempPos` se usa para decidir cuál hijo (izquierdo o derecho) se va a usar para reemplazar al nodo eliminado.
-
-      #### Caso 1a: Nodo Hoja (Sin Hijos):
-
-      ```cpp
-      if (tempPos == -1) {
-         pos = -1;
+        if (tempPos == -1)
+        {
+          pos = -1;
+        }
+        else
+        {
+          pos = tempPos;
+        }
       }
+
       ```
 
+      - Se verifica si el nodo tiene un hijo izquierdo o un hijo derecho igual a `-1`. Esto indica que el nodo tiene uno o ningún hijo.
 
-      - Si se cumple, el nodo no tiene hijos (es un nodo hoja). Simplemente se elimina asignando `pos = -1`.
+      - Caso sin hijos: Si `tempPos` es igual a `-1`, el nodo no tiene hijos, por lo que se asigna `pos` a `-1`, eliminando así el nodo.
 
-      #### Caso 1b: Nodo con Hijo:
-
-      ```cpp
-      else {
-         RecordType temp = getRecord(pos);
-         record = temp;
-         pos = tempPos;
-      }
-      ```
-
-      
-      - Caso contrario, el nodo tiene un solo hijo. Entonces se reemplaza el nodo actual por su hijo (`pos = tempPos`).
+      - Si hay un hijo: Se asigna `pos` a `tempPos`, enlazando el padre al único hijo y eliminando el nodo actual.
 
    4. Caso 2: Nodo con Dos Hijos
 
       ```cpp
-      else {
-         long nextPos = getMinValueRecord(record.right);
-         RecordType nextNode = getRecord(nextPos);
+      else
+      {
+        long nextPos = getMinValueRecord(record.right);
+        RecordType nextNode = getRecord(nextPos);
 
-         record.id = nextNode.id;
-         remove(record.right, nextNode.id);
+        record.id = nextNode.id;
+
+        if (!remove(record.right, nextNode.id))
+           return false;
       }
       ```
 
+      - Encontrar el nodo mínimo: Se llama a la  función `getMinValueRecord(record.right)` para encontrar la posició´n del nodo más pequeño en el subárbol derecho al nodo actual.
 
-      - Si el nodo tiene dos hijos, se encuentra un sucesor en el subárbol derecho.
+      - Reemplazar el valor del nodo: se obtiene el nodo más pequeño y se copia el `id` del nodo más pequeño que se desea eliminar.
 
-      - La clave del sucesor (`nextNode.id`) se usa para reemplazar la clave del nodo que estamos eliminando (`record.id = nextNode.id`).
-
-      - Luego, se llama recursivamente a `remove` para eliminar el sucesor del subárbol derecho.
+      - Eliminar el nodo mínimo: Se llama a la función `remove` para eliminar el nodo más pequeño en el subárbol derecho, asegurando que el árbol permanezca equilibrado y que no haya dplicados.
 
    5. Actualizar y Balancear el Árbol
 
@@ -499,74 +515,103 @@ La función `search` está diseñada para realizar la búsqueda exacta de un reg
 
 #### Descripción del Proceso
 
-   1. Inicialización de Variables
+**Función Auxiliar**
 
-      ```cpp
-      Registro reg;
-      std::ifstream file(filename, std::ios::binary);
-      ```
+1. Apertura del archivo
 
-      - `std::ifstream file(filename, std::ios::binary)`: Se abre el archivo principal en modo de lectura binaria. El nombre del archivo es proporcionado en el constructor de la clase.
+   ```cpp
+   std::ifstream file(filename, std::ios::binary);
+   if (!file.is_open())
+      return false;
+   ```
 
-   2. Lectura de Archivo Principal
+   - Si no se puede abrir, retorna `false` (búsqueda fallida).
 
-      - Este bucle se ejecuta mientras se pueda leer un registro completo del archivo.
+2. Determinación del tamaño del archivo y número de registros
 
+   ```cpp
+   file.seekg(0, std::ios::end);
+   int fileSize = file.tellg();
+   int recordCount = fileSize / sizeof(Registro);
+   ```
+   - Calcula el temaño total del archivo y el número de registros en el archivo.
 
-      ```cpp
-      while (file.read(reinterpret_cast<char *>(&reg), sizeof(Registro)))
-      ```
+3. Inicialización de punteros para la búsqueda binaria
 
-   3. Comparación de claves en el Archivo Principal
+   ```cpp
+   int left = 0;
+   int right = recordCount - 1;
+   ```
+   - Inicializamos los punteros `left` y `right` que representan los límites de la búsqueda binaria.
 
-      - Dentro del bucle, se compara la clave del registro leído (`reg.key`) con la clave buscada (`key`). Si se encuentra una coincidencia, se cierra el archivo y devuelve el registro encontrado.
+4. Realización de la búsqueda binaria
 
+   ```cpp
+   while (left <= right)
+   {
+      int mid = left + (right - left) / 2;
 
-      ```cpp
-      if (reg.key == key)
+      file.seekg(mid * sizeof(Registro), std::ios::beg);
+      file.read(reinterpret_cast<char *>(&result), sizeof(Registro));
+
+      if (result.id == key)
       {
          file.close();
-         return reg;
+         return true;
+      }
+      else if (result.id < key)
+      {
+         left = mid + 1;
+      }
+      else
+      {
+         right = mid - 1;
+      }
+   }
+   ```
+
+   - Mientras `left` sea menor o iual a `right`, secalcula el punto medio `mid`.
+
+   - Se posiciona el puntero del archivo(`seekg`) e el registro del medio y se lee el registro
+
+   - Si el `id` delr egistro leído es igual a la `key`, se cierra el archivo y se retorna `true`.
+
+   - Caso contrario, si es menor que la `key`, se actualiza `left` para buscar en la mitad superior.
+
+   - Caso Contrario, se actualiza el `right` para buscar la mitad inferior.
+
+**Función Principal**
+
+   1. Búsqueda en el archivo principal y auxiliar
+
+      ```cpp
+      Registro search(TK key)
+      {
+         Registro reg;
+         if (searchInFile(filename, key, reg) && !reg.deleted)
+         {
+               return reg;
+         }
+         if (searchInFile(aux_filename, key, reg) && !reg.deleted)
+         {
+               return reg;
+         }
+      ```
+
+      - Se llama a la función auxiliar `searchInFile` para buscar el registro en el archivo principal, y comprobamos que el registro no está marcado como eliminado. Si se encuentra retorna el registro inmediatamente.
+
+      - De igual manera se llama a la función para buscar en el archivo auxiliar, si se encuentra retorna el registro.
+
+   2. Manejo de registro no encontrado
+
+      ```cpp
+      Registro failReg;
+      failReg.id = -1;
+      return failReg;
       }
       ```
 
-   4. Búsqueda y Lectura en Archivo Auxiliar
-
-      - Si el registro no se encontró en el archivo principal, se abre el archivo auxiliar.
-
-
-      ```cpp
-      file.open(aux_filename, std::ios::binary);
-      ```
-
-      - Al igual que con el archivo principal, se intenta leer registros del archivo auxiliar en un bucle.
-
-
-      ```cpp
-      while (file.read(reinterpret_cast<char *>(&reg), sizeof(Registro)))
-      ```
-
-   6. Comparación de Claves en el Archivo Auxiliar
-
-      - Se compara nuevamente la clave del registro leído con la clave buscada. Si se encuentra una coincidencia se cierra el archivo auxiliar y retorna el registro encontrado.
-
-
-      ```cpp
-      if (reg.key == key)
-      {
-         file.close();
-         return reg;
-      }
-      ```
-
-   7. Manejo de excepciones
-
-      - Si el registro no se encuentra en ninguno de los archivos, se lanza una excepción std::runtime_error con el mensaje "Not found". Esto informa al usuario de que no se encontró el registro con la clave especificada.
-
-
-      ```cpp
-      throw std::runtime_error("Not found");
-      ```
+      - Si no se encuentra el registro en ninguno de los dos archivos, se crea un registro `failReg`, el valor -1 indica que no se encontró el registro.
 
 **RANGE SEARCH**
 
@@ -574,19 +619,23 @@ La función `rangeSearch` está diseñada para la búsqueda de registros por ran
 
 #### Descripción del Proceso
 
-   1. Inicialización de Variables
+**Función Axiliar**
+
+   1. Apertura de Archivo
 
       ```cpp
-      std::vector<Registro> results;
-      Registro reg;
       std::ifstream file(filename, std::ios::binary);
+      if (!file.is_open())
+         return false;
       ```
 
-   - `vector<Registro>`: Se declara un vector llamado results que almacenará los registros que cumplan con la condición de búsqueda dentro del rango.
+   - Se abre el archivo en modo lectura binaria.
 
-   2. Lectura de Archivo Principal
+   - Si no se puede abrir el archivo, la función retorna `false` inmediatamente.
 
-      - Este bucle se ejecuta mientras se pueda leer un registro completo del archivo.
+   2. Lectura de Todos los Registros
+
+      - Este bucle se ejecuta mientras se pueda leer un registro completo del archivo. Se lee cada registro en la variable `reg`.
  
    
       ```cpp
@@ -595,75 +644,75 @@ La función `rangeSearch` está diseñada para la búsqueda de registros por ran
 
    3. Comparación de Claves
 
-      - Dentro del bucle, se verifica si la clave del registro leído (`reg.key`) está dentro del rango definido por `begin_key` y `end_key`.
+      - Dentro del bucle, se verifica si la clave del registro leído (`reg.key`) está dentro del rango definido por `begin_key` y `end_key` y que no estén eliminados.
 
       - Si la clave está dentro del rango, se agrega el registro al vector `results`.
 
 
       ```cpp
-      if (reg.key >= begin_key && reg.key <= end_key)
+      if (!reg.deleted && reg.id >= begin_key && reg.id <= end_key)
       {
          results.push_back(reg);
       }
       ```
 
-   4. Búsqueda y Lectura en el Archivo Auxiliar
+**Función Principal**
 
-      - Si la búsqueda no se limita a los registros en el archivo principal, se abre el archivo auxiliar. Al igual que con el archivo principal, se intenta leer registros del archivo auxiliar en un bucle.
+   ```cpp
+   std::vector<Registro> rangeSearch(TK begin_key, TK end_key){
+      std::vector<Registro> results;
+      readRecordsInRange(filename, begin_key, end_key, results);
+      readRecordsInRange(aux_filename, begin_key, end_key, results);
+      return results;
+   }
+   ```
 
+   - Se crea un vector `results` para almacenar los registros que se encuentren dentro del rango especificado.
 
-      ```cpp
-      file.open(aux_filename, std::ios::binary);
+   - Se le llama a la función auxiliar `readRecordsInRange` para buscar registros en el archivo principal y auxiliar.
 
-      while (file.read(reinterpret_cast<char *>(&reg), sizeof(Registro)))
-      ```
-   5. Comparación de Claves en el Archivo Auxiliar
-
-      - Se compara nuevamente la clave del registro leído con el rango definido por `begin_key` y `end_key`. Si la clave está dentro del rango, se agrega el registro al vector `results`.
-
-
-      ```cpp
-      if (reg.key >= begin_key && reg.key <= end_key)
-      {
-         results.push_back(reg);
-      }
-      ```
+   - Todos los registros que se encuuentren en el rango se añadirán al vector. 
 
 **ADD**
 
-#### Función `Merge`
-Esta función se encarga de fusionar los registros almacenados en el archivo auxiliar y el archivo principal en un único archivo principal ordenado. Se llama cuando el número de registros en el archivo auxiliar alcanza un límite (`MAX_AUX_RECORD`).
+**Función `readAllRecords`**
 
-   1. Lectura del Archivo Principal
-      - Se abre el archivo principal y mientras se pueda leer un registro completo del archivo principal, se agrega cada registro leído al vector `allRecords`.
-
-
-      ```cpp
+   ```cpp
+   void readAllRecords(const std::string &filename, std::vector<Registro> &allRecords)
+   {
+      Registro reg;
       std::ifstream file(filename, std::ios::binary);
+      if (!file.is_open())
+         return;
 
       while (file.read(reinterpret_cast<char *>(&reg), sizeof(Registro)))
       {
          allRecords.push_back(reg);
       }
       file.close();
-      ```
-   2. Lectura del Archivo Auxiliar
-      - De igual manera que el archivo principal, se lee cada registro del archivo auxiliar y se agrega al vector `allRecords`.
+   }
+   ```
 
-      
+   - Se abre el archivo, y verifica si es que se abrió correctamente.
+
+   - Se utiliza un bucle para leer todos los registros del archivo. Cada vez que se le un registro, se añade al vector `allRecors`.
+
+**Función `Merge`**
+Esta función se encarga de fusionar los registros almacenados en el archivo auxiliar y el archivo principal en un único archivo principal ordenado. Se llama cuando el número de registros en el archivo auxiliar alcanza un límite (`MAX_AUX_RECORD`).
+
+   1. Lectura del Archivo Principal y Auxiliar
+
+      - Se llama a la función `readAllRecord` para leer todos los registros del archivo principal y el archivo auxiliar, y se almacenan en el vector `allRecords`.
+
       ```cpp
-      file.open(aux_filename, std::ios::binary);
-
-         while (file.read(reinterpret_cast<char *>(&reg), sizeof(Registro)))
-         {
-            allRecords.push_back(reg);
-         }
-         file.close();
+      std::vector<Registro> allRecords;
+      readAllRecords(filename, allRecords);
+      readAllRecords(aux_filename, allRecords);
       ```
 
-   3. Ordenamiento de Registros
-      - Se ordenan todos los registros almacenados en el vector `allRecords` utilizando la clave de cada registro. La función lambda compara las claves para determinar el orden.
+   2. Ordenamiento de los Registros
 
+      - Se ordenan todos los registros almacenados en el vector `allRecords` utilizando la clave de cada registro. La función lambda compara las claves para determinar el orden.
      
       ```cpp
       std::sort(allRecords.begin(), allRecords.end(), [](const Registro &a, const Registro &b){ return a.key < b.key; });
@@ -671,18 +720,21 @@ Esta función se encarga de fusionar los registros almacenados en el archivo aux
 
    4. Escritura de Registros en el Archivo Principal
 
-      - Se abre el archivo principal y se trunca (vacía) para que se escriban solo los registros fusionados.
+      - Se abre el archivo principal y se trunca (vacía) para que se escriban solo los registros fusionados y que no estén eliminados.
 
 
       ```cpp
          std::ofstream outFile(filename, std::ios::binary | std::ios::trunc);
          for (const auto &r : allRecords)
          {
-            outFile.write(reinterpret_cast<const char *>(&r), sizeof(Registro));
+            if (!r.deleted) { 
+              outFile.write(reinterpret_cast<const char *>(&r), sizeof(Registro));
+            }
          }
          outFile.close();
       ```
-   5. Vaciar el Archivo Auxiliar
+
+   5. Limpieza del Archivo Auxiliar
 
       - Se trunca el archivo auxiliar, dejandolo vacío después de que se han fusionado sus registros en el archivo principal.
 
@@ -691,14 +743,15 @@ Esta función se encarga de fusionar los registros almacenados en el archivo aux
       std::ofstream auxFile(aux_filename, std::ios::binary |std::ios::trunc);
       auxFile.close();
       ```
-#### Función `getAuxRecordCount`
+
+**Función `getAuxRecordCount**
 Este método se encarga de contar el número de registros que hay en el archivo auxiliar (`aux_filenae`) y devuelve este conteo.
 
-      - Se abre el archivo auxiliar en modo lectura para leer los datos del archivo sin alterar su contenido.
+   - Se abre el archivo auxiliar en modo lectura para leer los datos del archivo sin alterar su contenido.
 
-      - Se utiliza la función `seekg` para mover el puntero de lectura al final del archivo.
+   - Se utiliza la función `seekg` para mover el puntero de lectura  al final del archivo.
 
-      - Se obtiene la posición actual del puntero usando `tellg`, se divide por `sizeof(Registro)` (representa el tamaño de cada registro en bytes) para obtener el número total de registros en el archivo. 
+   - Se obtiene la posición actual del puntero usando `tellg`, se divide por `sizeof(Registro)` (representa el tamaño de cada registro en bytes) para obtener el número total de registros en el archivo. 
 
 
       ```cpp
@@ -716,16 +769,19 @@ Este método se encarga de contar el número de registros que hay en el archivo 
 
    1. Registro existente
 
-      - Antes de realizar la inserción, se intenta buscar el registro utilizando su clave. Si el registro ya existe, se lanza una excepción `std::runtime_error`. La función simplemente retorna sin hacer nada, evitando duplicados.
+      - Se llama a la función `search` para verificar si ya existe un registro con el mismo `id` en el archivo principal o auxiliar.
+
+      - Si se encuentra, la función retorna nada.
 
 
       ```cpp
-      try
+      void add(Registro registro)
       {
-         search(registro.key);
-         return;
-      }
-      catch (const std::runtime_error &){}
+        Registro existingRecord = search(registro.id);
+        if (existingRecord.id == registro.id)
+        {
+            return;
+        }
       ```
 
    2. Escritura del Archivo Auxiliar
@@ -738,6 +794,7 @@ Este método se encarga de contar el número de registros que hay en el archivo 
          auxFile.write(reinterpret_cast<const char *>(&registro), sizeof(Registro));
          auxFile.close();
       ```
+
    3. Verificación y Fusión de Registros
    
       - Se verifica si el nÚmero de registros en el archivo auxiliar ha alcanzado el límite máximo (`MAX_AUX_RECORD`). Si alcanza el límite, se llama a la función `mergeFiles` para fusionar los registros en el archivo principal.
@@ -755,6 +812,91 @@ Este método se encarga de contar el número de registros que hay en el archivo 
 La función `remove` está diseñada para la eliminación de un registro en específico utilizando la llave para la búsqueda.
 
 #### Descripción del Proceso
+
+**Función Auxiliar**
+
+1. Apertura del Archivo
+
+   ```cpp
+   bool removeFromFile(const std::string &filename, TK key)
+   {
+      bool found = false;
+      Registro reg;
+
+      std::ifstream file(filename, std::ios::binary);
+      if (!file.is_open())
+         return false;
+   ```
+
+   - Se declara una variable booleana `found` que se inicializa en `false`. Esta variable se utilizará para indicar si el registro fue encontrado y eliminado.
+
+   - Se abre el archivo, en caso no pueda retornará `false`.
+
+2. Lectura de Registros
+
+   ```cpp
+   std::vector<Registro> records;
+   while (file.read(reinterpret_cast<char *>(&reg), sizeof(Registro)))
+   {
+      records.push_back(reg);
+   }
+   ```
+
+   - Se declara un vector `records` para almacenar todos los registros leídos del archivo.
+
+   - Se utiliza el bucle `while` para leer los registros del archivo, almacenando cada uno en el vector `records`.
+
+3. Búsqueda y Eliminación del Registro
+
+   ```cpp
+   auto it = std::lower_bound(records.begin(), records.end(), key, [](const Registro &r, TK key)
+                              { return r.id < key; });
+
+   if (it != records.end() && it->id == key && !it->deleted)
+   {
+      found = true;
+      it->deleted = true;
+   }
+   ```
+
+   - La función `lower_bound` se utiliza para encontrar la posición del registro en el vector que podría contener la clave buscada. Este método requiere que los registros estén ordenados. Devuelve un iterador quee apunta al primer elemento que no es menor que `key`.
+
+   - Se verifica si el iterador no ha alcanzado el final del vector y lo marca como aliminado.
+
+4. Escritura de registros actualizados en el archivo
+
+   ```cpp
+   if (found)
+   {
+      std::ofstream outFile(filename, std::ios::binary | std::ios::trunc);
+      for (const auto &r : records)
+      {
+         outFile.write(reinterpret_cast<const char *>(&r), sizeof(Registro));
+      }
+      outFile.close();
+   }
+   ```
+
+   - Si el registro fue encontrado y eliminado, se trunca (vacía) el archivo.
+
+   - Se recorren todos los registros restantes en el vector `records` y se escriben de nuevo en el archivo.
+
+**Función Principal**
+
+   ```cpp
+   bool remove(TK key)
+   {
+      if (removeFromFile(filename, key))
+      {
+         return true;
+      }
+      return removeFromFile(aux_filename, key);
+   }
+   ```
+
+   - La función llama a `removeFromFile`, si retorna `true`, significa que el registro fue encontrado y eliminado.
+
+   - Si la eliminación no se realizó, la función intentará eliminar el registro del archivo auxiliar.
 
    1. Inicialización de Variables
 
@@ -1114,8 +1256,6 @@ std::vector<std::vector<std::string>> extraerRegistros(const std::string& texto)
 }
 ```
 
-
-
 ### 3. Metadata
 
 La clase `MetadataManager` se encarga de gestionar los metadatos que describen los tipos de archivos (AVL, Secuenciales, Hash) y los tipos de registros que almacenan (como `hospitalesopendata` y `directorioredes`). Estos metadatos se almacenan en un archivo y se cargan en memoria para ser fácilmente accesibles por la clase `SQLParser`.
@@ -1154,3 +1294,12 @@ if (tokens[0] == "create" && tokens[1] == "table") {
 
 ### Cuadro Comparativo de Técnicas de Indexación
 
+![image](https://github.com/user-attachments/assets/ba2bcf5c-39c4-434b-a843-23980fe0c843)
+
+![image](https://github.com/user-attachments/assets/7ea63ed5-67ad-4d42-8916-9cf66be81a88)
+
+![image](https://github.com/user-attachments/assets/928998a7-52a3-48f6-80f6-5d68c94e4201)
+
+![image](https://github.com/user-attachments/assets/28871046-dbc6-49d8-b6cd-932f4246d65a)
+
+![image](https://github.com/user-attachments/assets/30944026-79fc-4c59-bca5-5be4c762039e)
