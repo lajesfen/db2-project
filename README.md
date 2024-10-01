@@ -422,26 +422,26 @@ La función `remove` se encarga de eliminar un nodo (registro) con una clave (`k
 
    3. Decicidir el Camino de Búsqueda
    
-   ```
-   if (key < record.id)
-   {
-      if (!remove(record.left, key))
-         return false;
-   }
-   else if (key > record.id)
-   {
-      if (!remove(record.right, key))
-         return false;
-   }
-   else
-   {
-   ```
+      ```
+      if (key < record.id)
+      {
+         if (!remove(record.left, key))
+            return false;
+      }
+      else if (key > record.id)
+      {
+         if (!remove(record.right, key))
+            return false;
+      }
+      else
+      {
+      ```
 
-   - Si `key < record.id`: Se realiza unan llamada recursiva para buscar y eliminar el registro en el subárbol izquierdo.
+      - Si `key < record.id`: Se realiza unan llamada recursiva para buscar y eliminar el registro en el subárbol izquierdo.
 
-   - Si `key > record.id`: Se realiza una llamada recursiva para buscar y eliminar el registro en el subárbol derecho.
+      - Si `key > record.id`: Se realiza una llamada recursiva para buscar y eliminar el registro en el subárbol derecho.
 
-   - Caso contrario, se procede con la lógica de eliminación 
+      - Caso contrario, se procede con la lógica de eliminación 
 
    3. Caso 1: Nodo con Cero o Un Hijo
 
@@ -629,9 +629,9 @@ La función `rangeSearch` está diseñada para la búsqueda de registros por ran
          return false;
       ```
 
-   - Se abre el archivo en modo lectura binaria.
+      - Se abre el archivo en modo lectura binaria.
 
-   - Si no se puede abrir el archivo, la función retorna `false` inmediatamente.
+      - Si no se puede abrir el archivo, la función retorna `false` inmediatamente.
 
    2. Lectura de Todos los Registros
 
@@ -1297,14 +1297,4 @@ if (tokens[0] == "create" && tokens[1] == "table") {
 ![image](https://github.com/user-attachments/assets/7ea63ed5-67ad-4d42-8916-9cf66be81a88)
 ![image](https://github.com/user-attachments/assets/928998a7-52a3-48f6-80f6-5d68c94e4201)
 ![image](https://github.com/user-attachments/assets/28871046-dbc6-49d8-b6cd-932f4246d65a)
-![image](https://github.com/user-attachments/assets/30944026-79fc-4c59-bca5-5be4c762039e)
-
-![image](https://github.com/user-attachments/assets/ba2bcf5c-39c4-434b-a843-23980fe0c843)
-
-![image](https://github.com/user-attachments/assets/7ea63ed5-67ad-4d42-8916-9cf66be81a88)
-
-![image](https://github.com/user-attachments/assets/928998a7-52a3-48f6-80f6-5d68c94e4201)
-
-![image](https://github.com/user-attachments/assets/28871046-dbc6-49d8-b6cd-932f4246d65a)
-
 ![image](https://github.com/user-attachments/assets/30944026-79fc-4c59-bca5-5be4c762039e)
