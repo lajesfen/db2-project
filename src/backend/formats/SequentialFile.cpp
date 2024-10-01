@@ -68,9 +68,9 @@ public:
         if (!file.is_open())
             return false;
 
-        file.seekg(0, std::ios::end); 
+        file.seekg(0, std::ios::end);
         int fileSize = file.tellg();
-        int recordCount = fileSize / sizeof(Registro); 
+        int recordCount = fileSize / sizeof(Registro);
 
         int left = 0;
         int right = recordCount - 1;
@@ -85,11 +85,11 @@ public:
             if (result.id == key)
             {
                 file.close();
-                return true; 
+                return true;
             }
             else if (result.id < key)
             {
-                left = mid + 1; 
+                left = mid + 1;
             }
             else
             {
@@ -98,7 +98,7 @@ public:
         }
 
         file.close();
-        return false; 
+        return false;
     }
 
     std::vector<Registro> rangeSearch(TK begin_key, TK end_key)
@@ -178,7 +178,7 @@ public:
         {
             return true;
         }
-        return removeFromFile(aux_filename, key); 
+        return removeFromFile(aux_filename, key);
     }
 
     bool removeFromFile(const std::string &filename, TK key)
