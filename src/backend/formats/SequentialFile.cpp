@@ -142,7 +142,7 @@ public:
         file.close();
 
         std::sort(allRecords.begin(), allRecords.end(), [](const Registro &a, const Registro &b)
-                          { return a.id < b.id; });
+                  { return a.id < b.id; });
 
         return allRecords;
     }
@@ -150,16 +150,16 @@ public:
     bool remove(TK key)
     {
         bool found = false;
-        std::vector<Registro> registros;
+        std::vector<Registro> mainRecords;
+        std::vector<Registro> auxRecords;
         Registro reg;
 
         std::ifstream file(filename, std::ios::binary);
-
         while (file.read(reinterpret_cast<char *>(&reg), sizeof(Registro)))
         {
             if (reg.id != key)
             {
-                registros.push_back(reg);
+                mainRecords.push_back(reg);
             }
             else
             {
@@ -168,20 +168,42 @@ public:
         }
         file.close();
 
-        if (!found)
+        if (found)
         {
-            return false;
+            std::ofstream outFile(filename, std::ios::binary | std::ios::trunc);
+            for (const auto &r : mainRecords)
+            {
+                outFile.write(reinterpret_cast<const char *>(&r), sizeof(Registro));
+            }
+            outFile.close();
+            return true; 
         }
 
-        std::ofstream outFile(filename, std::ios::binary | std::ios::trunc);
-
-        for (const auto &r : registros)
+        std::ifstream auxFile(aux_filename, std::ios::binary);
+        while (auxFile.read(reinterpret_cast<char *>(&reg), sizeof(Registro)))
         {
-            outFile.write(reinterpret_cast<const char *>(&r), sizeof(Registro));
+            if (reg.id != key)
+            {
+                auxRecords.push_back(reg);
+            }
+            else
+            {
+                found = true; 
+            }
         }
-        outFile.close();
+        auxFile.close();
 
-        return true;
+        if (found)
+        {
+            std::ofstream outAuxFile(aux_filename, std::ios::binary | std::ios::trunc);
+            for (const auto &r : auxRecords)
+            {
+                outAuxFile.write(reinterpret_cast<const char *>(&r), sizeof(Registro));
+            }
+            outAuxFile.close();
+        }
+
+        return found;
     }
 
     int getAuxRecordCount()
@@ -215,7 +237,7 @@ public:
         file.close();
 
         std::sort(allRecords.begin(), allRecords.end(), [](const Registro &a, const Registro &b)
-        { return a.id < b.id; });
+                  { return a.id < b.id; });
 
         std::ofstream outFile(filename, std::ios::binary | std::ios::trunc);
         for (const auto &r : allRecords)
