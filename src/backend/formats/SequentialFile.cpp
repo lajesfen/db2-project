@@ -4,7 +4,7 @@
 #include <algorithm>
 #include <stdexcept>
 
-#define MAX_AUX_RECORD 50 // Máxima cantidad de registros
+#define MAX_AUX_RECORD 40 // Máxima cantidad de registros
 
 template <typename TK, typename Registro>
 class SequentialFile
@@ -48,39 +48,73 @@ public:
     Registro search(TK key)
     {
         Registro reg;
-        std::ifstream file(filename, std::ios::binary);
-
-        while (file.read(reinterpret_cast<char *>(&reg), sizeof(Registro)))
+        if (searchInFile(filename, key, reg))
         {
-            if (reg.id == key)
-            {
-                file.close();
-                return reg;
-            }
+            return reg;
         }
-        file.close();
-
-        file.open(aux_filename, std::ios::binary);
-        while (file.read(reinterpret_cast<char *>(&reg), sizeof(Registro)))
+        if (searchInFile(aux_filename, key, reg))
         {
-            if (reg.id == key)
-            {
-                file.close();
-                return reg;
-            }
+            return reg;
         }
-        file.close();
 
         Registro failReg;
         failReg.id = -1;
         return failReg;
     }
 
+    bool searchInFile(const std::string &filename, TK key, Registro &result)
+    {
+        std::ifstream file(filename, std::ios::binary);
+        if (!file.is_open())
+            return false;
+
+        file.seekg(0, std::ios::end); 
+        int fileSize = file.tellg();
+        int recordCount = fileSize / sizeof(Registro); 
+
+        int left = 0;
+        int right = recordCount - 1;
+
+        while (left <= right)
+        {
+            int mid = left + (right - left) / 2;
+
+            file.seekg(mid * sizeof(Registro), std::ios::beg);
+            file.read(reinterpret_cast<char *>(&result), sizeof(Registro));
+
+            if (result.id == key)
+            {
+                file.close();
+                return true; 
+            }
+            else if (result.id < key)
+            {
+                left = mid + 1; 
+            }
+            else
+            {
+                right = mid - 1;
+            }
+        }
+
+        file.close();
+        return false; 
+    }
+
     std::vector<Registro> rangeSearch(TK begin_key, TK end_key)
     {
         std::vector<Registro> results;
+        readRecordsInRange(filename, begin_key, end_key, results);
+        readRecordsInRange(aux_filename, begin_key, end_key, results);
+        return results;
+    }
+
+    void readRecordsInRange(const std::string &filename, TK begin_key, TK end_key, std::vector<Registro> &results)
+    {
         Registro reg;
         std::ifstream file(filename, std::ios::binary);
+        if (!file.is_open())
+            return;
 
         while (file.read(reinterpret_cast<char *>(&reg), sizeof(Registro)))
         {
@@ -90,18 +124,6 @@ public:
             }
         }
         file.close();
-
-        file.open(aux_filename, std::ios::binary);
-        while (file.read(reinterpret_cast<char *>(&reg), sizeof(Registro)))
-        {
-            if (reg.id >= begin_key && reg.id <= end_key)
-            {
-                results.push_back(reg);
-            }
-        }
-        file.close();
-
-        return results;
     }
 
     void add(Registro registro)
@@ -127,19 +149,8 @@ public:
         std::vector<Registro> allRecords;
         Registro reg;
 
-        std::ifstream file(filename, std::ios::binary);
-        while (file.read(reinterpret_cast<char *>(&reg), sizeof(Registro)))
-        {
-            allRecords.push_back(reg);
-        }
-        file.close();
-
-        file.open(aux_filename, std::ios::binary);
-        while (file.read(reinterpret_cast<char *>(&reg), sizeof(Registro)))
-        {
-            allRecords.push_back(reg);
-        }
-        file.close();
+        readAllRecords(filename, allRecords);
+        readAllRecords(aux_filename, allRecords);
 
         std::sort(allRecords.begin(), allRecords.end(), [](const Registro &a, const Registro &b)
                   { return a.id < b.id; });
@@ -147,60 +158,62 @@ public:
         return allRecords;
     }
 
+    void readAllRecords(const std::string &filename, std::vector<Registro> &allRecords)
+    {
+        Registro reg;
+        std::ifstream file(filename, std::ios::binary);
+        if (!file.is_open())
+            return;
+
+        while (file.read(reinterpret_cast<char *>(&reg), sizeof(Registro)))
+        {
+            allRecords.push_back(reg);
+        }
+        file.close();
+    }
+
     bool remove(TK key)
     {
+        if (removeFromFile(filename, key))
+        {
+            return true;
+        }
+        return removeFromFile(aux_filename, key); 
+    }
+
+    bool removeFromFile(const std::string &filename, TK key)
+    {
         bool found = false;
-        std::vector<Registro> mainRecords;
-        std::vector<Registro> auxRecords;
         Registro reg;
 
         std::ifstream file(filename, std::ios::binary);
+        if (!file.is_open())
+            return false;
+
+        std::vector<Registro> records;
         while (file.read(reinterpret_cast<char *>(&reg), sizeof(Registro)))
         {
-            if (reg.id != key)
-            {
-                mainRecords.push_back(reg);
-            }
-            else
-            {
-                found = true;
-            }
+            records.push_back(reg);
         }
         file.close();
+
+        auto it = std::lower_bound(records.begin(), records.end(), key, [](const Registro &r, TK key)
+                                   { return r.id < key; });
+
+        if (it != records.end() && it->id == key)
+        {
+            found = true;
+            records.erase(it);
+        }
 
         if (found)
         {
             std::ofstream outFile(filename, std::ios::binary | std::ios::trunc);
-            for (const auto &r : mainRecords)
+            for (const auto &r : records)
             {
                 outFile.write(reinterpret_cast<const char *>(&r), sizeof(Registro));
             }
             outFile.close();
-            return true; 
-        }
-
-        std::ifstream auxFile(aux_filename, std::ios::binary);
-        while (auxFile.read(reinterpret_cast<char *>(&reg), sizeof(Registro)))
-        {
-            if (reg.id != key)
-            {
-                auxRecords.push_back(reg);
-            }
-            else
-            {
-                found = true; 
-            }
-        }
-        auxFile.close();
-
-        if (found)
-        {
-            std::ofstream outAuxFile(aux_filename, std::ios::binary | std::ios::trunc);
-            for (const auto &r : auxRecords)
-            {
-                outAuxFile.write(reinterpret_cast<const char *>(&r), sizeof(Registro));
-            }
-            outAuxFile.close();
         }
 
         return found;
@@ -220,21 +233,8 @@ public:
         std::vector<Registro> allRecords;
         Registro reg;
 
-        std::ifstream file(filename, std::ios::binary);
-
-        while (file.read(reinterpret_cast<char *>(&reg), sizeof(Registro)))
-        {
-            allRecords.push_back(reg);
-        }
-        file.close();
-
-        file.open(aux_filename, std::ios::binary);
-
-        while (file.read(reinterpret_cast<char *>(&reg), sizeof(Registro)))
-        {
-            allRecords.push_back(reg);
-        }
-        file.close();
+        readAllRecords(filename, allRecords);
+        readAllRecords(aux_filename, allRecords);
 
         std::sort(allRecords.begin(), allRecords.end(), [](const Registro &a, const Registro &b)
                   { return a.id < b.id; });

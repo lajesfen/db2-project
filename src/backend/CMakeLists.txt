@@ -5,3 +5,4 @@ set(CMAKE_CXX_STANDARD 17)
 
 add_executable(Project main.cpp formats/AVL.cpp)
 include_directories(include)
+target_link_libraries(Project Ws2_32 Mswsock)
