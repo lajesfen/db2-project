@@ -4,16 +4,17 @@
 #include <vector>
 #include <cmath>
 
-#define MAX_DEPTH 6   // Profundidad máxima del directorio
-#define MAX_FILL 10    // Capacidad máxima de cada bucket
+#define MAX_DEPTH 6 // Profundidad máxima del directorio
+#define MAX_FILL 10 // Capacidad máxima de cada bucket
 
 using namespace std;
 
 template <typename TK, typename RecordType>
-class ExtendibleHashing {
+class ExtendibleHashing
+{
 private:
-    string indexFilename;  // Nombre del archivo de índice
-    string dataFilename;   // Nombre del archivo de datos
+    string indexFilename; // Nombre del archivo de índice
+    string dataFilename;  // Nombre del archivo de datos
 
 public:
     // Constructor que recibe el nombre base para los archivos
@@ -80,7 +81,7 @@ public:
     // Función para buscar registros por código
     RecordType find(TK codi)
     {
-        ifstream dataFile(dataFilename, ios::binary | ios::in);  // Asegurarse de abrir en modo lectura
+        ifstream dataFile(dataFilename, ios::binary | ios::in); // Asegurarse de abrir en modo lectura
         RecordType record;
         if (dataFile)
         {
@@ -163,7 +164,7 @@ private:
     // Función para obtener el índice del bucket desde el archivo de índice
     int getBucketIndex(TK key)
     {
-        ifstream inFile(indexFilename, ios::binary | ios::in);  // Asegurarse de abrir en modo lectura
+        ifstream inFile(indexFilename, ios::binary | ios::in); // Asegurarse de abrir en modo lectura
         if (inFile)
         {
             int index = hashFunction(key);
@@ -188,5 +189,26 @@ private:
         }
         return -1;
     }
-};
 
+    vector<RecordType> getAllRecords()
+    {
+        vector<RecordType> records;
+        ifstream dataFile(dataFilename, ios::binary | ios::in);
+        RecordType record;
+
+        if (dataFile)
+        {
+            while (dataFile.read(reinterpret_cast<char *>(&record), sizeof(RecordType)))
+            {
+                records.push_back(record);
+            }
+            dataFile.close();
+        }
+        else
+        {
+            cout << "Error al abrir " << dataFilename << " para leer." << endl;
+        }
+
+        return records; 
+    }
+};

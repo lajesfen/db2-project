@@ -588,17 +588,17 @@ La función `search` está diseñada para realizar la búsqueda exacta de un reg
       Registro search(TK key)
       {
          Registro reg;
-         if (searchInFile(filename, key, reg) && !reg.deleted)
+         if (searchInFile(filename, key, reg))
          {
                return reg;
          }
-         if (searchInFile(aux_filename, key, reg) && !reg.deleted)
+         if (searchInFile(aux_filename, key, reg))
          {
                return reg;
          }
       ```
 
-      - Se llama a la función auxiliar `searchInFile` para buscar el registro en el archivo principal, y comprobamos que el registro no está marcado como eliminado. Si se encuentra retorna el registro inmediatamente.
+      - Se llama a la función auxiliar `searchInFile` para buscar el registro en el archivo principal. Si se encuentra retorna el registro inmediatamente.
 
       - De igual manera se llama a la función para buscar en el archivo auxiliar, si se encuentra retorna el registro.
 
@@ -644,13 +644,13 @@ La función `rangeSearch` está diseñada para la búsqueda de registros por ran
 
    3. Comparación de Claves
 
-      - Dentro del bucle, se verifica si la clave del registro leído (`reg.key`) está dentro del rango definido por `begin_key` y `end_key` y que no estén eliminados.
+      - Dentro del bucle, se verifica si la clave del registro leído (`reg.key`) está dentro del rango definido por `begin_key` y `end_key`.
 
       - Si la clave está dentro del rango, se agrega el registro al vector `results`.
 
 
       ```cpp
-      if (!reg.deleted && reg.id >= begin_key && reg.id <= end_key)
+      if (reg.id >= begin_key && reg.id <= end_key)
       {
          results.push_back(reg);
       }
@@ -720,16 +720,14 @@ Esta función se encarga de fusionar los registros almacenados en el archivo aux
 
    4. Escritura de Registros en el Archivo Principal
 
-      - Se abre el archivo principal y se trunca (vacía) para que se escriban solo los registros fusionados y que no estén eliminados.
+      - Se abre el archivo principal y se trunca (vacía) para que se escriban solo los registros fusionados.
 
 
       ```cpp
          std::ofstream outFile(filename, std::ios::binary | std::ios::trunc);
          for (const auto &r : allRecords)
          {
-            if (!r.deleted) { 
-              outFile.write(reinterpret_cast<const char *>(&r), sizeof(Registro));
-            }
+            outFile.write(reinterpret_cast<const char *>(&r), sizeof(Registro));
          }
          outFile.close();
       ```
@@ -852,16 +850,16 @@ La función `remove` está diseñada para la eliminación de un registro en espe
    auto it = std::lower_bound(records.begin(), records.end(), key, [](const Registro &r, TK key)
                               { return r.id < key; });
 
-   if (it != records.end() && it->id == key && !it->deleted)
+   if (it != records.end() && it->id == key)
    {
       found = true;
-      it->deleted = true;
+      records.erase(it);
    }
    ```
 
    - La función `lower_bound` se utiliza para encontrar la posición del registro en el vector que podría contener la clave buscada. Este método requiere que los registros estén ordenados. Devuelve un iterador quee apunta al primer elemento que no es menor que `key`.
 
-   - Se verifica si el iterador no ha alcanzado el final del vector y lo marca como aliminado.
+   - Se verifica si el iterador no ha alcanzado el final del vector y lo elimina.
 
 4. Escritura de registros actualizados en el archivo
 
